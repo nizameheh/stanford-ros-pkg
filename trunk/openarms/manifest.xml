@@ -1,0 +1,15 @@
+<package>
+  <description brief="openarms">
+    Concepts, ideas, and experiments on low-cost manipulator design and control.
+  </description>
+  <author>Morgan Quigley mquigley@cs.stanford.edu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ai.stanford.edu/~mquigley</url>
+  <depend package="roscpp"/>
+  <depend package="eigen"/>
+  <depend package="serial_port"/>
+  <depend package="tf"/>
+  <depend package="joy"/>
+</package>
+
