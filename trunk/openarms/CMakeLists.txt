@@ -12,7 +12,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 #find_package(SDL REQUIRED)
 rosbuild_init(openarms)
-#rosbuild_genmsg()
+rosbuild_genmsg()
 
 #uncomment if you have defined messages
 #genmsg()
@@ -76,7 +76,7 @@ rosbuild_init(openarms)
 #rosbuild_add_executable(oa2-minimal drivers/oa2-minimal.cpp)
 
 #rosbuild_add_executable(oa-hand drivers/oa-hand.cpp)
-#rosbuild_add_executable(oa2-stepper drivers/oa2-stepper.cpp)
+rosbuild_add_executable(oa-gripper drivers/oa-gripper.cpp)
 #rosbuild_add_executable(laser-tilter drivers/laser-tilter.cpp)
 #rosbuild_add_executable(wrist-torques drivers/wrist-torques.cpp)
 
