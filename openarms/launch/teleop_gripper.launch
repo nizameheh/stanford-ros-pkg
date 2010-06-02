@@ -1,0 +1,4 @@
+<launch>
+  <node name="joy" pkg="joy" type="joy_node"/>
+  <node name="oa_gripper_teleop" pkg="openarms" type="oa_gripper_teleop" output="screen"/>
+</launch>

@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+
+import roslib; roslib.load_manifest('openarms')
+import rospy, sys
+from openarms.msg import GripperPosition
+from joy.msg import Joy
+
+if __name__ == '__main__':
+  g_cmd = 0
+
+  def joy_update(msg):
+    global g_cmd
+    g_cmd = (msg.axes[0] * 0.5 + 0.5) * 255
+
+  pub_pos = rospy.Publisher('gripper_position', GripperPosition)
+  sub = rospy.Subscriber('joy', Joy, joy_update)
+  rospy.init_node('oa2_gripper_teleop')
+  cmd_pos = GripperPosition()
+  r = rospy.Rate(100)
+  while not rospy.is_shutdown():
+    cmd_pos.position = g_cmd
+    pub_pos.publish(cmd_pos)
+    print g_cmd
+    r.sleep()
+
