@@ -1,0 +1,17 @@
+<stack>
+  <description brief="Packages from the Stanford AI Lab">
+    Various packages developed by various authors at the Stanford AI lab. 
+    Some are quite functional and stable, and others are obsolete or
+    otherwise broken. I have attempted to indicate at least some of their
+    status by the top-level directory name.
+  </description>
+  <author>Various Stanford students</author>
+  <license>BSD</license>
+  <depend stack="geometry"/> 
+  <depend stack="ros"/> 
+  <depend stack="visualization_common"/> 
+  <depend stack="common"/> 
+  <depend stack="common_msgs"/> 
+  <depend stack="laser_pipeline"/> 
+</stack>
+
