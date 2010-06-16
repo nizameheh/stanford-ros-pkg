@@ -1,0 +1,140 @@
+<?xml version="1.0" ?>
+<robot name="oa6">
+  <resource location="$(find openarms)/meshes"/>
+
+  <link name="torso">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="torso_mesh">
+        <mesh filename="oa1_base"/>
+      </geometry>
+      <material name="Red">
+        <color rgba="255 0 0 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="torso_joint" type="fixed">
+    <parent link="world"/>
+    <child link="torso"/>
+    <axis xyz="0 0 1"/>
+    <anchor xyz="0 0 0"/>
+  </joint>
+</robot>
+
+<!--
+  <joint name="oa1_joint_1" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit min="-1.5" max="1.5" effort="30" velocity="0.2" k_velocity="10"
+  safety_length_min="0.1" safety_length_max="0.1" k_position="10"/>
+  </joint>
+  <joint name="oa1_joint_2" type="revolute">
+  <axis xyz="0 0 1"/>
+  <limit min="-1.5" max="1.5" effort="30" velocity="0.2" k_velocity="10"
+  safety_length_min="0.1" safety_length_max="0.1" k_position="10"/>
+  </joint>
+  <joint name="oa1_joint_3" type="revolute">
+  <axis xyz="0 0 1"/>
+  <limit min="-1.5" max="1.5" effort="30" velocity="0.2" k_velocity="10"
+  safety_length_min="0.1" safety_length_max="0.1" k_position="10"/>
+  </joint>
+  <joint name="oa1_elbow" type="revolute">
+  <axis xyz="0 0 1"/>
+  <limit min="-1.5" max="1.5" effort="30" velocity="0.2" k_velocity="10"
+safety_length_min="0.1" safety_length_max="0.1" k_position="10"/>
+</joint>
+<joint name="oa1_wrist_pitch" type="revolute">
+<axis xyz="0 0 1"/>
+<limit min="-1.5" max="1.5" effort="30" velocity="0.2" k_velocity="10"
+safety_length_min="0.1" safety_length_max="0.1" k_position="10"/>
+</joint>
+<joint name="oa1_wrist_roll" type="revolute">
+<axis xyz="0 0 1"/>
+<limit min="-1.5" max="1.5" effort="30" velocity="0.2" k_velocity="10"
+safety_length_min="0.1" safety_length_max="0.1" k_position="10"/>
+</joint>
+<link name="quarter_gimbal">
+<parent name="base_link"/>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<joint name="oa1_joint_1"/>
+<visual>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<map name="gazebo_material" flag="gazebo">
+<elem key="material" value="PR2/Green"/>
+</map>
+<geometry name="quarter_gimbal_mesh">
+<mesh filename="oa1_quarter_gimbal"/>
+</geometry>
+</visual>
+</link>
+<link name="half_gimbal">
+<parent name="quarter_gimbal"/>
+<origin xyz="0 0 .5" rpy=".3 0 0"/>
+<joint name="oa1_joint_2"/>
+<visual>
+<origin xyz=".24 1 .5" rpy=".7 0 0"/>
+<map name="gazebo_material" flag="gazebo">
+<elem key="material" value="PR2/Blue"/>
+</map>
+<geometry name="half_gimbal_mesh">
+<mesh filename="oa1_half_gimbal"/>
+</geometry>
+</visual>
+</link>
+<link name="upper_arm">
+<parent name="half_gimbal"/>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<joint name="oa1_joint_3"/>
+<visual>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<map name="gazebo_material" flag="gazebo">
+<elem key="material" value="PR2/Yellow"/>
+</map>
+<geometry name="upper_arm_mesh">
+<mesh filename="oa1_upper_arm"/>
+</geometry>
+</visual>
+</link>
+<link name="lower_arm">
+<parent name="upper_arm"/>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<joint name="oa1_elbow"/>
+<visual>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<map name="gazebo_material" flag="gazebo">
+<elem key="material" value="PR2/Yellow"/>
+</map>
+<geometry name="lower_arm_mesh">
+<mesh filename="oa1_lower_arm"/>
+</geometry>
+</visual>
+</link>
+<link name="wrist_pitch">
+<parent name="lower_arm"/>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<joint name="oa1_wrist_pitch"/>
+<visual>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<map name="gazebo_material" flag="gazebo">
+<elem key="material" value="PR2/Yellow"/>
+</map>
+<geometry name="wrist_pitch">
+<mesh filename="wrist_pitch"/>
+</geometry>
+</visual>
+</link>
+<link name="wrist_roll">
+<parent name="wrist_pitch"/>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<joint name="oa1_wrist_roll"/>
+<visual>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<map name="gazebo_material" flag="gazebo">
+<elem key="material" value="PR2/Yellow"/>
+</map>
+<geometry name="wrist_roll">
+<mesh filename="wrist_roll"/>
+</geometry>
+</visual>
+-->
