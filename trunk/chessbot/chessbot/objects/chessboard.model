@@ -1,0 +1,906 @@
+<?xml version="1.0" ?>
+<!-- Object2: example checker box -->
+<model:physical name="checker_model">
+  <xyz>   0    0    0 </xyz>
+  <rpy>   0    0    0</rpy>
+  <static>true</static>
+  <body:box name="checker_body">
+<geom:box name="checker_00_geom">
+	<xyz>0.0 0.0 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_01_geom">
+	<xyz>0.0 0.04 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_02_geom">
+	<xyz>0.0 0.08 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_03_geom">
+	<xyz>0.0 0.12 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_04_geom">
+	<xyz>0.0 0.16 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_05_geom">
+	<xyz>0.0 0.2 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_06_geom">
+	<xyz>0.0 0.24 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_07_geom">
+	<xyz>0.0 0.28 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_10_geom">
+	<xyz>0.04 0.0 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_11_geom">
+	<xyz>0.04 0.04 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_12_geom">
+	<xyz>0.04 0.08 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_13_geom">
+	<xyz>0.04 0.12 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_14_geom">
+	<xyz>0.04 0.16 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_15_geom">
+	<xyz>0.04 0.2 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_16_geom">
+	<xyz>0.04 0.24 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_17_geom">
+	<xyz>0.04 0.28 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_20_geom">
+	<xyz>0.08 0.0 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_21_geom">
+	<xyz>0.08 0.04 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_22_geom">
+	<xyz>0.08 0.08 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_23_geom">
+	<xyz>0.08 0.12 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_24_geom">
+	<xyz>0.08 0.16 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_25_geom">
+	<xyz>0.08 0.2 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_26_geom">
+	<xyz>0.08 0.24 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_27_geom">
+	<xyz>0.08 0.28 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_30_geom">
+	<xyz>0.12 0.0 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_31_geom">
+	<xyz>0.12 0.04 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_32_geom">
+	<xyz>0.12 0.08 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_33_geom">
+	<xyz>0.12 0.12 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_34_geom">
+	<xyz>0.12 0.16 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_35_geom">
+	<xyz>0.12 0.2 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_36_geom">
+	<xyz>0.12 0.24 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_37_geom">
+	<xyz>0.12 0.28 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_40_geom">
+	<xyz>0.16 0.0 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_41_geom">
+	<xyz>0.16 0.04 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_42_geom">
+	<xyz>0.16 0.08 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_43_geom">
+	<xyz>0.16 0.12 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_44_geom">
+	<xyz>0.16 0.16 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_45_geom">
+	<xyz>0.16 0.2 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_46_geom">
+	<xyz>0.16 0.24 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_47_geom">
+	<xyz>0.16 0.28 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_50_geom">
+	<xyz>0.2 0.0 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_51_geom">
+	<xyz>0.2 0.04 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_52_geom">
+	<xyz>0.2 0.08 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_53_geom">
+	<xyz>0.2 0.12 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_54_geom">
+	<xyz>0.2 0.16 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_55_geom">
+	<xyz>0.2 0.2 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_56_geom">
+	<xyz>0.2 0.24 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_57_geom">
+	<xyz>0.2 0.28 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_60_geom">
+	<xyz>0.24 0.0 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_61_geom">
+	<xyz>0.24 0.04 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_62_geom">
+	<xyz>0.24 0.08 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_63_geom">
+	<xyz>0.24 0.12 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_64_geom">
+	<xyz>0.24 0.16 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_65_geom">
+	<xyz>0.24 0.2 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_66_geom">
+	<xyz>0.24 0.24 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_67_geom">
+	<xyz>0.24 0.28 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_70_geom">
+	<xyz>0.28 0.0 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_71_geom">
+	<xyz>0.28 0.04 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_72_geom">
+	<xyz>0.28 0.08 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_73_geom">
+	<xyz>0.28 0.12 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_74_geom">
+	<xyz>0.28 0.16 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_75_geom">
+	<xyz>0.28 0.2 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_76_geom">
+	<xyz>0.28 0.24 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>1000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/Black</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+<geom:box name="checker_77_geom">
+	<xyz>0.28 0.28 0.0</xyz>
+	<size>0.04 0.04 0.0035</size>
+	<laserRetro>3000</laserRetro>
+	<kp>1000000.0</kp>
+	<kd>1.0</kd>
+	<mesh>default</mesh>
+	<mass> 0.01</mass>
+	<visual>
+		<size> 0.04 0.04 0.0035</size>
+		<material>Gazebo/White</material>
+		<mesh>unit_box</mesh>
+	</visual>
+</geom:box>
+
+  </body:box>
+</model:physical>
