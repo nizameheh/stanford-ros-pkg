@@ -1,0 +1,11 @@
+#goal definition
+int8 origin_row
+int8 origin_col
+int8 destination_row
+int8 destination_col
+bool capture
+
+---
+#result definition
+---
+#feedback definition

@@ -1,0 +1,35 @@
+<launch>
+
+  <node name="spawn_chesspiece11" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y 0.08 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece11" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece12" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y 0.04 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece12" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece13" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y 0.00 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece13" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece14" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y -0.04 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece14" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece15" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y -0.08 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece15" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece16" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y -0.12 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece16" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece17" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y -0.16 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece17" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece18" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y -0.20 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece18" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece21" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y 0.08 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece21" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece22" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y 0.04 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece22" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece23" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y 0.00 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece23" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece24" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y -0.04 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece24" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece25" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y -0.08 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece25" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece26" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y -0.12 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece26" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece27" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y -0.16 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece27" respawn="false" output="screen" />
+
+  <node name="spawn_chesspiece28" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y -0.20 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece28" respawn="false" output="screen" />
+
+</launch>

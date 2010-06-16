@@ -1,0 +1,8 @@
+# goal definition
+geometry_msgs/PoseStamped setpoint
+---
+# result definition
+geometry_msgs/Pose endpoint
+---
+# feedback definition
+geometry_msgs/Pose currentpoint
