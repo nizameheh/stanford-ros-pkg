@@ -8,11 +8,11 @@
 #include <avr/interrupt.h>
 
 // hardware connections (completely arbitrary)
-// PA0 = ~enable0
-// PA1 = ~enable1
+// PA0 = ~enable0  (io 22 on arduino mega)
+// PA1 = ~enable1  (io 23 on arduino mega)
 // PB7 =  led (on arduino mega)
-// PC0 =  dir0
-// PC1 =  dir1
+// PC0 =  dir0   (io 37 on arduino mega)
+// PC1 =  dir1   (io 36 on arduion mega)
 // PB5 =  OC1A = step0 (pwm 11 on arduino mega)
 // PE3 =  OC3A = step1 (pwm  5 on arduino mega)
 
@@ -59,6 +59,7 @@ ISR(USART0_RX_vect)
           g_motor_tgt[m] = *((uint32_t *)&g_cmd_pkt[m*6+2]);
         g_tgt_update[m] = 1;
       }
+      PORTB ^= 0x80;
       g_cmd_pkt_write_pos = 0;
     }
     else if (g_cmd_pkt_write_pos >= CMD_PKT_LEN)
@@ -72,7 +73,7 @@ uint8_t vel_to_ocr(uint8_t vel)
   // vel here means "X steps per second" where x is 5 or whatever
   if (vel == 0)
     return 255; // not really
-  uint16_t ocr = 5000 / (uint16_t)vel;
+  uint16_t ocr = 2000 / (uint16_t)vel;
   //uint16_t ocr = 16384 / (uint16_t)vel;
   if (ocr > 255) // too slow
     ocr = 255;
@@ -87,23 +88,17 @@ int main(void)
   wdt_disable();
 
   // wgm = 0100, divide clock by 1024, toggle when hit OCRnA
-  TCCR0A = 0x42;
-  TCCR0B = 0x05;
   TCCR1A = 0x40;
   TCCR1B = 0x0D;
   TCCR3A = 0x40; // set to 0x40 to make it step
   TCCR3B = 0x0D;
-  TCCR4A = 0x40;
-  TCCR4B = 0x0D;
-  TCCR5A = 0x40;
-  TCCR5B = 0x0D;
 
   DDRA = 0x03;
   DDRB = 0xa0;
   DDRC = 0x03;
   DDRE = 0x08;
  
-  PORTA = 0x00;
+  PORTA = 0x03;
   PORTB = 0x00;
   PORTC = 0x00;
   PORTE = 0x00;
@@ -123,16 +118,18 @@ int main(void)
     g_tgt_update[m] = 0;
   }
 
+  //OCR1A = 0xf0;
+  //TCCR1A = 0x40;
   m = 0;
   while (1)
   {
     if (g_tgt_update[0] && (TCNT1 == 0 || TCCR1A == 0x00))
     {
       g_tgt_update[0] = 0;
-      if (g_motor_dir & 0x02)
-        PORTC |= 0x02;
+      if (g_motor_dir & 0x01)
+        PORTC |= 0x01;
       else
-        PORTC &= ~0x02;
+        PORTC &= ~0x01;
       OCR1A = vel_to_ocr(g_motor_vel[0]);
       if (g_motor_vel[0] == 0)
         TCCR1A = 0x00;
@@ -142,10 +139,10 @@ int main(void)
     if (g_tgt_update[1] && (TCNT3 == 0 || TCCR3A == 0x00))
     {
       g_tgt_update[1] = 0;
-      if (g_motor_dir & 0x04)
-        PORTC |= 0x04;
+      if (g_motor_dir & 0x02)
+        PORTC |= 0x02;
       else
-        PORTC &= ~0x04;
+        PORTC &= ~0x02;
       OCR3A = vel_to_ocr(g_motor_vel[1]);
       if (g_motor_vel[1] == 0)
         TCCR3A = 0x00;

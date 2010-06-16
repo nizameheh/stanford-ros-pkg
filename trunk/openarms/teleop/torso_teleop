@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+
+import roslib; roslib.load_manifest('openarms')
+import rospy, sys
+from openarms.msg import StepperTarget
+from joy.msg import Joy
+
+if __name__ == '__main__':
+  g_vel = [0,0,0,0]
+  prev_buttons = None
+
+  def joy_update_0(msg_0):
+    global g_vel
+    if len(msg_0.axes) >= 3:
+      g_vel[1] = msg_0.axes[1] * 255
+      g_vel[0] = -msg_0.axes[2] * 255
+
+  def joy_update_1(msg_1):
+    global g_vel
+    if len(msg_1.axes) >= 3:
+      g_vel[2] = -msg_1.axes[0] * 255
+      g_vel[3] = msg_1.axes[1] * 255
+
+    '''
+    if prev_buttons and len(msg.buttons) >= 2:
+      if s1_step_rate == 0:
+        if msg.buttons[0] and not prev_buttons[0]:
+          s1_step_increment = 1
+        elif msg.buttons[1] and not prev_buttons[1]:
+          s1_step_increment = -1
+        elif msg.buttons[2] and not prev_buttons[2]:
+          s1_step_increment = -10
+        elif msg.buttons[3] and not prev_buttons[3]:
+          s1_step_increment = 10
+    prev_buttons = msg.buttons
+    '''
+
+  pub_step = rospy.Publisher('stepper_targets', StepperTarget)
+  sub_0 = rospy.Subscriber('joy_0', Joy, joy_update_0)
+  sub_1 = rospy.Subscriber('joy_1', Joy, joy_update_1)
+  rospy.init_node('oa_torso')
+  cmd_step = StepperTarget()
+  r = rospy.Rate(100)
+  while not rospy.is_shutdown():
+    cmd_step.mode = [2,2,2,2] # velocity mode 
+    cmd_step.vel = [0,0,0,0]
+    for motor_idx in xrange(0, 4):
+      if g_vel[motor_idx] > 0:
+        cmd_step.mode[motor_idx] += 128
+      cmd_step.vel[motor_idx] = int(abs(g_vel[motor_idx]))
+    cmd_step.pos = [0,0,0,0]
+    pub_step.publish(cmd_step)
+    print g_vel
+    r.sleep()
+
