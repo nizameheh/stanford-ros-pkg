@@ -8,7 +8,7 @@
         <mesh filename="package://openarms/urdf/meshes/torso.stl"/>
       </geometry>
       <material name="Red">
-        <color rgba="255 0 0 0.6"/>
+        <color rgba="0.8 0.0 0.0 1.0"/>
       </material>
     </visual>
   </link>
@@ -19,15 +19,15 @@
       <geometry name="shoulderlift_mesh">
         <mesh filename="package://openarms/urdf/meshes/shoulderlift.stl"/>
       </geometry>
-      <material name="Orange">
-        <color rgba="255 200 0 0.6"/>
+      <material name="Green"> 
+        <color rgba="0.0 1.0 0.0 1.0"/>
       </material>
     </visual>
   </link>
   <joint name="shoulderlift_joint" type="continuous">
     <parent link="torso"/>
     <child link="shoulderlift"/>
-    <origin xyz="0.30 0 0" rpy="0 1.57 0"/>
-    <axis xyz="1 0 0"/>
+    <origin xyz="0.31 0 0" rpy="0 1.57 0"/>
+    <axis xyz="0 0 1"/>
   </joint>
 </robot>
