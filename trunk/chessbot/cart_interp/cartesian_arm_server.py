@@ -29,14 +29,15 @@ class CartesianArmServer:
         currentpose = data.pose
         if (targetpose is not None):
             linear_position_error=math.sqrt(math.pow(targetpose.position.x-data.pose.position.x,2)+math.pow(targetpose.position.y-data.pose.position.y,2)+math.pow(targetpose.position.z-data.pose.position.z,2))
+            rospy.loginfo(str(linear_position_error))
     
     def execute(self, goal):
         global targetpose, currentpose, linear_position_error
         success = True
         rate = rospy.Rate(1.0)
         targetpose = goal.setpoint.pose
-        linear_position_error = 9999
-        while (linear_position_error > 0.02 or linear_position_error is None):
+        linear_position_error = None
+        while (((linear_position_error is None) or (linear_position_error > 0.02)) and not rospy.is_shutdown()):
             if self._as.is_preempt_requested():
                 self._as.set_preempted()
                 success = False
