@@ -18,7 +18,7 @@
         p: 800.0
         d: 15.0
       rot:
-        p: 90.0
+        p: 80.0
         d: 1.2
     joint_feedforward:
       r_shoulder_pan_joint: 3.33
@@ -37,7 +37,7 @@
       r_wrist_flex_joint: 5.568
       r_wrist_roll_joint: 5.568
 
-    vel_saturation_trans: 1.0
+    vel_saturation_trans: 2.0
     vel_saturation_rot: 4.0
   </rosparam>
   
@@ -94,21 +94,4 @@
   <node name="r_gripper_controller"
   	pkg="pr2_controller_manager" type="pr2_controller_manager"
 	args="start r_gripper_controller" />
-
-  <group ns="checkerdetector" clear_params="true">
-    	<param name="~corners_x" type="int" value="7"/>
-    	<param name="~corners_y" type="int" value="7"/>
-    	<param name="~spacing_x" type="double" value="0.0339328125"/>
-    	<param name="~spacing_y" type="double" value="0.0339328125"/>
-    	<param name="~publish_period" type="double" value="0.2"/>
-    
-
-	<node name="cb_detector" pkg="checkerboard_pose" type="cb_detector.py" respawn="false" output="screen">
-      	      <remap from="camera_info" to="/narrow_stereo/left/camera_info"/>
-      	      <remap from="image_stream" to="/narrow_stereo/left/image_rect"/>
-    	</node>
-  </group>
-
-  <node name="chessbot"
-  	pkg="chessbot" type="chessbot.py" />
 </launch>

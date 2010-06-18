@@ -23,16 +23,19 @@ class Chessbot:
         self._as = actionlib.SimpleActionServer(self._action_name, chessbot.msg.ChessbotAction, execute_cb = self.execute)
 
     def execute(self, goal):
+        global latch_chessboard
+        latch_chessboard = True
         destination = Square(goal.destination_row, goal.destination_col)
         origin = Square(goal.origin_row, goal.origin_col)
         if goal.capture:
             move_piece(destination, Square(-2, -2))
         move_piece(origin, destination)
         self._as.set_succeeded()
+        latch_chessboard = False
 
 def square_to_coordinate(square):
-    board_x = (square.row - 3.5)*square_sidelength
-    board_y = -(square.col - 3.5)*square_sidelength
+    board_x = (square.row - 3.5)*square_sidelength#*1.05
+    board_y = -(square.col - 3.5)*square_sidelength#*1.1
 
     dx = board_x*math.cos(board_yaw) - board_y*math.sin(board_yaw)
     dy = board_y*math.cos(board_yaw) + board_x*math.sin(board_yaw)
@@ -66,7 +69,7 @@ def execute_pose(pose):
     posestamped.pose = pose
     goal = cart_interp.msg.CartesianArmServerGoal(setpoint = posestamped)
     arm_client.send_goal(goal)
-    arm_client.wait_for_result(timeout=rospy.Duration(10.0))
+    arm_client.wait_for_result(timeout=rospy.Duration(5.0))
 
 def hover_over_square(square):
     global elevated_altitude, orientation
@@ -103,7 +106,11 @@ def move_piece(origin, destination):
     set_piece(destination)    
 
 def update_chessboard(board_pose):
-    global tflistener, board_centerpoint, board_yaw
+    global tflistener, board_centerpoint, board_yaw, latch_chessboard, point_pub, square_Sidelength
+
+    if latch_chessboard:
+        rospy.logdebug('chessboard latched')
+        return
 
     try:
         transformed_board_pose = tflistener.transformPose('torso_lift_link', board_pose)
@@ -112,7 +119,7 @@ def update_chessboard(board_pose):
 
     q = (transformed_board_pose.pose.orientation.x, transformed_board_pose.pose.orientation.y, transformed_board_pose.pose.orientation.z, transformed_board_pose.pose.orientation.w)
     q = tf.transformations.quaternion_inverse(q)
-    P_in = (3*square_sidelength, 3*square_sidelength, 1, 0)
+    P_in = (3*square_sidelength, 3*square_sidelength, 0, 0)
     conj_q = tf.transformations.quaternion_conjugate(q)
     
     P_out = tf.transformations.quaternion_multiply(conj_q, tf.transformations.quaternion_multiply(P_in, q))
@@ -120,18 +127,29 @@ def update_chessboard(board_pose):
     board_centerpoint = Point(P_out[0]+transformed_board_pose.pose.position.x, P_out[1]+transformed_board_pose.pose.position.y, transformed_board_pose.pose.position.z)
 
     board_yaw = math.atan2(P_out[1], P_out[0])
+
     if (board_yaw < 0):
         board_yaw+=2*math.pi
     board_yaw = (board_yaw+(math.pi/4))%(math.pi/2)
     if (board_yaw > (math.pi/4)):
         board_yaw-=(math.pi/2)
 
+    centerpoint_stamped = PoseStamped()
+    centerpoint_stamped.header = transformed_board_pose.header
+    centerpoint_stamped.pose.orientation = transformed_board_pose.pose.orientation
+    centerpoint_stamped.pose.position = square_to_coordinate(Square(7, 7)) #board_centerpoint
+    point_pub.publish(centerpoint_stamped)
+
 def setup():
-    global tflistener, board_centerpoint, arm_client, gripper_client, square_sidelength, out_of_sight, boardlevel_altitude, elevated_altitude, orientation
-    square_sidelength = 0.04
+    global tflistener, board_centerpoint, arm_client, gripper_client, square_sidelength, out_of_sight, boardlevel_altitude, elevated_altitude, orientation, latch_chessboard, point_pub
+    latch_chessboard = False
+
+    point_pub = rospy.Publisher("board_center", PoseStamped)
+
+    square_sidelength = 0.0339328125
     board_centerpoint = None
 
-    orientation = Quaternion(-0.00403457514937, -0.580539478508, 0.00205700227215, -0.814219506545)
+    orientation = Quaternion(-0.00403457514937, -0.780539478508, 0.00205700227215, -0.625090084256)
     boardlevel_altitude = 0.04
     elevated_altitude = 0.15
 
