@@ -12,7 +12,7 @@
       </material>
     </visual>
   </link>
-  <link name="shoulderlift">
+  <link name="shoulderpitch">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="-.07 -0.084 0" rpy="0 0 3.14"/>
@@ -24,10 +24,29 @@
       </material>
     </visual>
   </link>
-  <joint name="shoulderlift_joint" type="continuous">
+  <link name="shoulderlift">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 0.2" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.05" length="0.4"/>
+      </geometry>
+      <material name="Yellow">
+        <color rgba="1.0 1.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="shoulderpitch_joint" type="continuous">
     <parent link="torso"/>
-    <child link="shoulderlift"/>
+    <child link="shoulderpitch"/>
     <origin xyz="0.31 0 0" rpy="0 1.57 0"/>
     <axis xyz="0 0 1"/>
   </joint>
+  <joint name="shoulderlift_joint" type="continuous">
+    <parent link="shoulderpitch"/>
+    <child link="shoulderlift"/>
+    <origin xyz="0 0 0.1" rpy="0 1.57 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
 </robot>
+
