@@ -1,3 +1,4 @@
+<?xml version="1.0" ?>
 <launch>
   <node name="unspawn_arms"
         pkg="pr2_controller_manager" type="unspawner"
@@ -83,32 +84,57 @@
   <node name="r_posture"
         pkg="teleop_controllers" type="posture.py"
         args="r_cart elbowupr" />
+
   <node name="l_posture"
         pkg="teleop_controllers" type="posture.py"
         args="l_cart elbowupl" />
 
+  <param name="success_threshold" value="0.02"/>
   <node name="r_cart_action_server"
-  	pkg="cart_interp" type="cartesian_arm_server.py"
-	args="r_cart" />
+  	pkg="cart_interp" type="cartesian_arm_server.py">
+    <remap from="cartesian_arm_controller" to="r_cart"/>
+  </node>
 
   <node name="r_gripper_controller"
   	pkg="pr2_controller_manager" type="pr2_controller_manager"
 	args="start r_gripper_controller" />
 
-  <group ns="checkerdetector" clear_params="true">
-    	<param name="~corners_x" type="int" value="7"/>
-    	<param name="~corners_y" type="int" value="7"/>
-    	<param name="~spacing_x" type="double" value="0.0339328125"/>
-    	<param name="~spacing_y" type="double" value="0.0339328125"/>
-    	<param name="~publish_period" type="double" value="0.2"/>
-    
-
-	<node name="cb_detector" pkg="checkerboard_pose" type="cb_detector.py" respawn="false" output="screen">
-      	      <remap from="camera_info" to="/narrow_stereo/left/camera_info"/>
-      	      <remap from="image_stream" to="/narrow_stereo/left/image_rect"/>
-    	</node>
+  <group ns="chessbot">
+    <group ns="chessboard_detector" clear_params="true">
+      <param name="~corners_x" type="int" value="7"/>
+      <param name="~corners_y" type="int" value="7"/>
+      <param name="~publish_period" type="double" value="0.2"/>
+      
+      <node name="cb_detector" pkg="checkerboard_pose" type="cb_detector.py" respawn="false" output="screen">
+	<remap from="camera_info" to="/narrow_stereo/left/camera_info"/>
+	<remap from="image_stream" to="/narrow_stereo/left/image_rect"/>
+	<remap from="~spacing_x" to="/chessbot/square_sidelength"/>
+	<remap from="~spacing_y" to="/chessbot/square_sidelength"/>
+      </node>
+    </group>
+    <node name="chessbot" pkg="chessbot" type="chessbot.py">
+      <remap from="cartesian_arm_server" to="/r_cart_action_server"/>
+      <remap from="gripper_server" to="/r_gripper_controller/gripper_action"/>
+    </node>
+    <rosparam>
+      square_sidelength: 0.0339328125
+      boardlevel_altitude: 0.04
+      elevated_altitude: 0.15
+      out_of_sight_pose:
+        position:
+          x: 0.842470855969
+          y: -0.185501577783
+          z: 0.315879531841
+        orientation:
+          x: -0.00403457514937
+          y: -0.580539478508
+          z: 0.00205700227215
+          w: 0.814219506545
+      gripper_orientation:
+        x: -0.00403457514937
+        y: -0.780539478508
+        z: 0.00205700227215
+        w: -0.625090084256
+    </rosparam>
   </group>
-
-  <node name="chessbot"
-  	pkg="chessbot" type="chessbot.py" />
 </launch>

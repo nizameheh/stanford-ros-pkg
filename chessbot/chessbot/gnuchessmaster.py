@@ -62,7 +62,7 @@ def makeMove(move):
         movePiece('e', 8, 'c', 8, False)
         movePiece('a', 8, 'd', 8, False)
     else:
-        movePiece(origin_file, origin_rank, destination_file, destination_rank, isEmpty(destination_file, destination_rank))
+        movePiece(origin_file, origin_rank, destination_file, destination_rank, not isEmpty(destination_file, destination_rank))
         if len(move) == 5:
             #pawn promotion
             if move[4].upper() == move[4]:
