@@ -1,0 +1,33 @@
+#!/usr/bin/env python
+
+import roslib; roslib.load_manifest('openarms')
+import rospy, sys
+from joy.msg import Joy
+from sensor_msgs.msg import JointState
+
+g_pos_tgt = [0,0,0,0]
+
+if __name__ == '__main__':
+  def joy_update_0(msg_0):
+    global g_pos_tgt
+    if len(msg_0.axes) >= 3:
+      g_pos_tgt[0] = msg_0.axes[0] * 1.0
+      g_pos_tgt[1] = msg_0.axes[1] * 1.0
+
+  def joy_update_1(msg_1):
+    global g_vel
+    if len(msg_1.axes) >= 3:
+      g_pos_tgt[2] = msg_1.axes[0] * 1.0
+      g_pos_tgt[3] = msg_1.axes[1] * 1.0
+
+  pub_tgt = rospy.Publisher('joint_targets', JointState)
+  sub_0 = rospy.Subscriber('joy_0', Joy, joy_update_0)
+  sub_1 = rospy.Subscriber('joy_1', Joy, joy_update_1)
+  rospy.init_node('arm_teleop')
+  r = rospy.Rate(100)
+  joint_tgt = JointState()
+  while not rospy.is_shutdown():
+    joint_tgt.position = g_pos_tgt
+    pub_tgt.publish(joint_tgt)
+    r.sleep()
+
