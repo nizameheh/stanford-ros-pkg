@@ -21,10 +21,12 @@ int main(int argc, char **argv)
   //world_trans.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(90*RAD2DEG,0,0);
   world_trans.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0,0,0);
 
-  joint_state.name.resize(1);
-  joint_state.position.resize(1);
-  joint_state.name[0] = "shoulderlift_joint";
+  joint_state.name.resize(2);
+  joint_state.position.resize(2);
+  joint_state.name[0] = "shoulderpitch_joint";
   joint_state.position[0] = 0;
+  joint_state.name[1] = "shoulderlift_joint";
+  joint_state.position[1] = 0;
   double lift_angle = 0;
   while (ros::ok())
   {

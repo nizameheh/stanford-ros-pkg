@@ -128,6 +128,20 @@ void set_gripper_goal(uint16_t goal)
   dynamixel_write(pkt, 9);
 }
 
+void set_torque_enable(uint8_t enable)
+{
+  uint8_t pkt[10];
+  pkt[0] = 0xff;
+  pkt[1] = 0xff;
+  pkt[2] = 0x02;
+  pkt[3] = 4;
+  pkt[4] = 0x03;
+  pkt[5] = 0x18; // torque enable register
+  pkt[6] = enable;
+  pkt[7] = calc_dynamixel_checksum(pkt, 7);
+  dynamixel_write(pkt, 8);
+}
+
 void position_cb(const openarms::GripperPosition::ConstPtr &msg)
 {
   /*
@@ -179,6 +193,7 @@ int main(int argc, char **argv)
   
   ros::Time last_dynamixel_query_time = ros::Time::now();
 
+  set_torque_enable(1);
   while (n.ok())
   {
     uint8_t read_buf[60];
@@ -203,6 +218,7 @@ int main(int argc, char **argv)
 
     ros::spinOnce();
   }
+  set_torque_enable(0);
 
   // shutdown motors before we quit
   /*
