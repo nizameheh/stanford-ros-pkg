@@ -11,79 +11,52 @@
 #include "ros/time.h"
 #include "ros/ros.h"
 #include "openarms/StepperTarget.h"
+#include "openarms/ArmSensors.h"
 
 LightweightSerial *g_serial = NULL; 
 const size_t NUM_MOTORS = 4;
 
-#if 0
 bool process_byte(uint8_t b, ros::Publisher *pub)
 {
   static uint8_t pkt[256];
   static uint8_t write_pos = 0, expected_len = 0;
-  static enum { IDLE, DATA, CHECKSUM, TERMINAL } s_state = TERMINAL;
+  static enum { IDLE, LENGTH, DATA, CHECKSUM } s_state = IDLE;
   switch (s_state)
   {
-    case TERMINAL:
-      if (b == '\n')
-        s_state = IDLE;
-      else
-        printf("%x found but 0x0a expected\n", b);
-      break;
     case IDLE:
+      if (b == 0xfe)
+        s_state = LENGTH;
+      else
+        printf("%x found but 0xfe expected\n", b);
+      break;
+    case LENGTH:
       expected_len = b;
-      if (expected_len > 100)
-        s_state = TERMINAL; // fail. wait for next newline and try again
+      if (expected_len > 20)
+      {
+        printf("bogus expected length: %x\n", b);
+        s_state = IDLE; // fail. wait for next sentinel.
+      }
       else
         s_state = DATA;
       write_pos = 0;
       break;
     case DATA:
       pkt[write_pos++] = b;
-      if (write_pos >= expected_len-2)
+      if (write_pos >= expected_len)
         s_state = CHECKSUM;
       break;
     case CHECKSUM:
-      s_state = TERMINAL;
+      s_state = IDLE;
       uint8_t local_csum = expected_len;
-      for (int i = 0; i < expected_len-2; i++)
+      for (int i = 0; i < expected_len; i++)
         local_csum += pkt[i];
       if (local_csum == b)
       {
-        //printf("%d byte packet\n", expected_len);
-        openarms::MinimalSensors msg;
-
-        msg.sensors.resize(4);
-
-        msg.sensors[0] = (pkt[0] << 8) | pkt[1];
-        msg.sensors[1] = (pkt[2] << 8) | pkt[3];
-        msg.sensors[2] = (pkt[4] << 8) | pkt[5];
-        msg.sensors[3] = (pkt[6] << 8) | pkt[7];
-
-        msg.accels.resize(3);
-
-        msg.accels[0] = (pkt[ 8] << 8) | pkt[9];
-        msg.accels[1] = (pkt[10] << 8) | pkt[11];
-        msg.accels[2] = (pkt[12] << 8) | pkt[13];
-
-        for (uint8_t i = 0; i < msg.accels.size() / 3; i++)
-          printf("%6d %6d %6d\n",
-                 msg.accels[i*3+0], msg.accels[i*3+1], msg.accels[i*3+2]);
-        printf("%6d %6d %6d %6d\n",
-               msg.sensors[0], msg.sensors[1], msg.sensors[2], msg.sensors[3]);
-        /*
-        for (uint8_t i = 0; i < 2; i++)
-          printf("%6d %6d %6d %6d\n",
-                 msg.sensors[4+i*4+0],
-                 msg.sensors[4+i*4+1],
-                 msg.sensors[4+i*4+2],
-                 msg.sensors[4+i*4+3]);
-          */
-        printf("\n");
-/*        
-        for (uint8_t i = 0; i < expected_len; i++)
-          printf("%d: %x\n", i, pkt[i]);
-        printf("\n\n");
-*/
+        openarms::ArmSensors msg;
+        msg.pos.resize(2);
+        msg.pos[0] = *((int32_t *)&pkt[0]);
+        msg.pos[1] = *((int32_t *)&pkt[4]);
+        //printf("%10d %10d\n", msg.pos[0], msg.pos[1]);
         pub->publish(msg);
         return true;
       }
@@ -94,7 +67,6 @@ bool process_byte(uint8_t b, ros::Publisher *pub)
   }
   return false; // didn't send a message
 }
-#endif
 
 void step_cb(const openarms::StepperTarget::ConstPtr &msg)
 {
@@ -116,10 +88,12 @@ void step_cb(const openarms::StepperTarget::ConstPtr &msg)
   }
   pkt[NUM_MOTORS*6] = '\n';
   g_serial->write_block(pkt, sizeof(pkt));
+  /*
   printf("wrote %04d bytes ", (int)sizeof(pkt));
   for (size_t i = 0; i < NUM_MOTORS; i++)
     printf(" %x-%03d ", msg->mode[i], msg->vel[i]);
   printf("\n");
+  */
 }
 
 int main(int argc, char **argv)
@@ -137,6 +111,7 @@ int main(int argc, char **argv)
   }
   g_serial = s;
   ros::Subscriber sub = n.subscribe("stepper_targets", 1, step_cb);
+  ros::Publisher pub = n.advertise<openarms::ArmSensors>("arm_sensors", 1);
   //ros::Time t_prev = ros::Time::now();
   //ros::spin();
   
@@ -148,10 +123,11 @@ int main(int argc, char **argv)
     {
       for (int i = 0; i < nread; i++)
       {
-        printf("    %d\n", read_buf[i]);
-        //if (process_byte(read_buf[i], &pub))
-        //  ros::spinOnce();
+        //printf("    %d  %x\n", read_buf[i], read_buf[i]);
+        if (process_byte(read_buf[i], &pub))
+          ros::spinOnce();
       }
+      //printf("\n");
     }
     else
       ros::Duration(0.001).sleep();
