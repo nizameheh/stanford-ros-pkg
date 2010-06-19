@@ -23,12 +23,18 @@
 #define MODE_VELOCITY 2
 #define MODE_POSITION 3
 
+#define TX_PKT_LEN 10
+
 volatile uint8_t  g_cmd_pkt[CMD_PKT_LEN+1], g_cmd_pkt_write_pos = 0;
 volatile uint8_t  g_motor_mode[NUM_MOTORS];
 volatile uint8_t  g_motor_dir;
 volatile uint8_t  g_motor_vel[NUM_MOTORS];
-volatile uint32_t g_motor_tgt[NUM_MOTORS];
+volatile int32_t g_motor_tgt[NUM_MOTORS];
 volatile uint8_t  g_tgt_update[NUM_MOTORS];
+volatile uint32_t g_motor_pos[NUM_MOTORS];
+volatile uint8_t  g_tx_pkt[TX_PKT_LEN], g_tx_pkt_read_pos = 0;
+
+
 
 ISR(USART0_RX_vect)
 {
@@ -67,6 +73,28 @@ ISR(USART0_RX_vect)
   }
 }
 
+ISR(USART0_TX_vect)
+{
+  if (g_tx_pkt_read_pos < TX_PKT_LEN-1)
+    UDR0 = g_tx_pkt[g_tx_pkt_read_pos++];
+}
+
+ISR(TIMER1_COMP_A_vect)
+{
+  if (PORTC | 0x01)
+    g_motor_pos[0]++;
+  else
+    g_motor_pos[0]--;
+}
+
+ISR(TIMER3_COMP_A_vect)
+{
+  if (PORTC | 0x02)
+    g_motor_pos[1]++;
+  else
+    g_motor_pos[1]--;
+}
+
 uint8_t vel_to_ocr(uint8_t vel)
 {
   // 1024 timer divisor @ 16 MHz clock, the timer is running at 16 KHz
@@ -82,6 +110,16 @@ uint8_t vel_to_ocr(uint8_t vel)
   return (uint8_t)ocr; // just right
 }
 
+void send_tx_pkt()
+{
+  g_tx_pkt[0] = 0xfe;
+  g_tx_pkt[1] = 8;
+  memcpy(g_tx_pkt+2, &g_motor_pos[0], 4);
+  memcpy(g_tx_pkt+6, &g_motor_pos[1], 4);
+  g_tx_pkt_read_pos = 0;
+  UDR0 = g_tx_pkt[0];
+}
+
 int main(void)
 {
   uint8_t m;
@@ -92,6 +130,9 @@ int main(void)
   TCCR1B = 0x0D;
   TCCR3A = 0x40; // set to 0x40 to make it step
   TCCR3B = 0x0D;
+
+  TIMSK1 = _BV(OCIE1A);
+  TIMSK3 = _BV(OCIE3A);
 
   DDRA = 0x03;
   DDRB = 0xa0;
@@ -105,7 +146,7 @@ int main(void)
 
   UBRR0  = 0; // 1 megabaud
   UCSR0A = 0;
-  UCSR0B = _BV(RXEN0)  | _BV(RXCIE0) | _BV(TXEN0);
+  UCSR0B = _BV(RXEN0)  | _BV(RXCIE0) | _BV(TXEN0) | _BV(TXCIE0);
   UCSR0C = _BV(UCSZ01) | _BV(UCSZ00); // 8n1
   sei();
 
