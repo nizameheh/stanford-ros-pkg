@@ -23,17 +23,17 @@
 #define MODE_VELOCITY 2
 #define MODE_POSITION 3
 
-#define TX_PKT_LEN 10
+#define TX_PKT_LEN 11
 
 volatile uint8_t  g_cmd_pkt[CMD_PKT_LEN+1], g_cmd_pkt_write_pos = 0;
 volatile uint8_t  g_motor_mode[NUM_MOTORS];
 volatile uint8_t  g_motor_dir;
 volatile uint8_t  g_motor_vel[NUM_MOTORS];
-volatile int32_t g_motor_tgt[NUM_MOTORS];
+volatile int32_t  g_motor_tgt[NUM_MOTORS];
 volatile uint8_t  g_tgt_update[NUM_MOTORS];
 volatile uint32_t g_motor_pos[NUM_MOTORS];
 volatile uint8_t  g_tx_pkt[TX_PKT_LEN], g_tx_pkt_read_pos = 0;
-
+volatile uint8_t  g_timer_flag = 0;
 
 
 ISR(USART0_RX_vect)
@@ -75,24 +75,29 @@ ISR(USART0_RX_vect)
 
 ISR(USART0_TX_vect)
 {
-  if (g_tx_pkt_read_pos < TX_PKT_LEN-1)
+  if (g_tx_pkt_read_pos < TX_PKT_LEN)
     UDR0 = g_tx_pkt[g_tx_pkt_read_pos++];
 }
 
-ISR(TIMER1_COMP_A_vect)
+ISR(TIMER1_COMPA_vect)
 {
-  if (PORTC | 0x01)
+  if (PORTC & 0x01)
     g_motor_pos[0]++;
   else
     g_motor_pos[0]--;
 }
 
-ISR(TIMER3_COMP_A_vect)
+ISR(TIMER3_COMPA_vect)
 {
-  if (PORTC | 0x02)
+  if (PORTC & 0x02)
     g_motor_pos[1]++;
   else
     g_motor_pos[1]--;
+}
+
+ISR(TIMER4_COMPA_vect)
+{
+  g_timer_flag = 1;
 }
 
 uint8_t vel_to_ocr(uint8_t vel)
@@ -112,11 +117,15 @@ uint8_t vel_to_ocr(uint8_t vel)
 
 void send_tx_pkt()
 {
+  uint8_t csum = 0, i;
   g_tx_pkt[0] = 0xfe;
   g_tx_pkt[1] = 8;
-  memcpy(g_tx_pkt+2, &g_motor_pos[0], 4);
-  memcpy(g_tx_pkt+6, &g_motor_pos[1], 4);
-  g_tx_pkt_read_pos = 0;
+  *((uint32_t *)(g_tx_pkt+2)) = g_motor_pos[0];
+  *((uint32_t *)(g_tx_pkt+6)) = g_motor_pos[1];
+  g_tx_pkt_read_pos = 1;
+  for (i = 1; i < 10; i++)
+    csum += g_tx_pkt[i];
+  g_tx_pkt[10] = csum;
   UDR0 = g_tx_pkt[0];
 }
 
@@ -126,13 +135,18 @@ int main(void)
   wdt_disable();
 
   // wgm = 0100, divide clock by 1024, toggle when hit OCRnA
-  TCCR1A = 0x40;
-  TCCR1B = 0x0D;
-  TCCR3A = 0x40; // set to 0x40 to make it step
-  TCCR3B = 0x0D;
+  TCCR1A = 0x00;
+  TCCR1B = _BV(WGM12) | _BV(CS12) | _BV(CS10);
+  TCCR3A = 0x00;
+  TCCR3B = _BV(WGM32) | _BV(CS32) | _BV(CS30);
+
+  // timer to know when to blast back the status messages
+  TCCR4A = 0;
+  TCCR4B = _BV(WGM42) | _BV(CS42) | _BV(CS40);
 
   TIMSK1 = _BV(OCIE1A);
   TIMSK3 = _BV(OCIE3A);
+  TIMSK4 = _BV(OCIE4A);
 
   DDRA = 0x03;
   DDRB = 0xa0;
@@ -143,6 +157,10 @@ int main(void)
   PORTB = 0x00;
   PORTC = 0x00;
   PORTE = 0x00;
+
+  OCR1A = 0xf0;
+  OCR3A = 0xf0;
+  OCR4A = 0x009b; // delay between tx packets, units of X/16khz
 
   UBRR0  = 0; // 1 megabaud
   UCSR0A = 0;
@@ -164,7 +182,14 @@ int main(void)
   m = 0;
   while (1)
   {
-    if (g_tgt_update[0] && (TCNT1 == 0 || TCCR1A == 0x00))
+    if (g_timer_flag)
+    {
+      g_timer_flag = 0;
+      send_tx_pkt();
+    }
+
+    if (g_tgt_update[0] &&  // update and we're at rollover or clock stopped
+        ((TCNT1 == 0 || TCCR1A == 0x00) || !(TCCR1B & _BV(CS12))))
     {
       g_tgt_update[0] = 0;
       if (g_motor_dir & 0x01)
@@ -173,11 +198,18 @@ int main(void)
         PORTC &= ~0x01;
       OCR1A = vel_to_ocr(g_motor_vel[0]);
       if (g_motor_vel[0] == 0)
+      {
         TCCR1A = 0x00;
+        TCCR1B &= ~(_BV(CS12) | _BV(CS10)); // stop timer clock
+      }
       else
+      {
         TCCR1A = 0x40;
+        TCCR1B |= _BV(CS12) | _BV(CS10);
+      }
     }
-    if (g_tgt_update[1] && (TCNT3 == 0 || TCCR3A == 0x00))
+    if (g_tgt_update[1] &&
+        ((TCNT3 == 0 || TCCR3A == 0x00) || !(TCCR3B & _BV(CS32))))
     {
       g_tgt_update[1] = 0;
       if (g_motor_dir & 0x02)
@@ -186,9 +218,15 @@ int main(void)
         PORTC &= ~0x02;
       OCR3A = vel_to_ocr(g_motor_vel[1]);
       if (g_motor_vel[1] == 0)
+      {
         TCCR3A = 0x00;
+        TCCR3B &= ~(_BV(CS32) | _BV(CS30)); // stop timer clock
+      }
       else
+      {
         TCCR3A = 0x40;
+        TCCR3B |= _BV(CS32) | _BV(CS30);
+      }
     }
   }
 }
