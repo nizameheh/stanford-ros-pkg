@@ -1,35 +1,34 @@
 <launch>
-
-  <node name="spawn_chesspiece11" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y 0.08 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece11" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece12" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y 0.04 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece12" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece13" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y 0.00 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece13" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece14" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y -0.04 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece14" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece15" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y -0.08 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece15" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece16" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y -0.12 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece16" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece17" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y -0.16 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece17" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece18" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.4 -y -0.20 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece18" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece21" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y 0.08 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece21" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece22" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y 0.04 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece22" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece23" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y 0.00 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece23" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece24" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y -0.04 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece24" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece25" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y -0.08 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece25" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece26" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y -0.12 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece26" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece27" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y -0.16 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece27" respawn="false" output="screen" />
-
-  <node name="spawn_chesspiece28" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/chesspiece.urdf -x 0.44 -y -0.20 -z 0.44 -R 0.0 -P 0.0 -Y0.0 spawn chesspiece28" respawn="false" output="screen" />
-
+	<node name="spawn_chesspiece00" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.315 -y 0.0875296875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece00" respawn="false" output="screen" />
+	<node name="spawn_chesspiece01" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.315 -y 0.053596875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece01" respawn="false" output="screen" />
+	<node name="spawn_chesspiece02" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.315 -y 0.0196640625 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece02" respawn="false" output="screen" />
+	<node name="spawn_chesspiece03" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.315 -y -0.01426875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece03" respawn="false" output="screen" />
+	<node name="spawn_chesspiece04" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.315 -y -0.0482015625 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece04" respawn="false" output="screen" />
+	<node name="spawn_chesspiece05" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.315 -y -0.082134375 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece05" respawn="false" output="screen" />
+	<node name="spawn_chesspiece06" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.315 -y -0.1160671875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece06" respawn="false" output="screen" />
+	<node name="spawn_chesspiece07" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.315 -y -0.15 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece07" respawn="false" output="screen" />
+	<node name="spawn_chesspiece10" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.3489328125 -y 0.0875296875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece10" respawn="false" output="screen" />
+	<node name="spawn_chesspiece11" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.3489328125 -y 0.053596875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece11" respawn="false" output="screen" />
+	<node name="spawn_chesspiece12" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.3489328125 -y 0.0196640625 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece12" respawn="false" output="screen" />
+	<node name="spawn_chesspiece13" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.3489328125 -y -0.01426875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece13" respawn="false" output="screen" />
+	<node name="spawn_chesspiece14" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.3489328125 -y -0.0482015625 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece14" respawn="false" output="screen" />
+	<node name="spawn_chesspiece15" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.3489328125 -y -0.082134375 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece15" respawn="false" output="screen" />
+	<node name="spawn_chesspiece16" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.3489328125 -y -0.1160671875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece16" respawn="false" output="screen" />
+	<node name="spawn_chesspiece17" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/whitechesspiece.urdf -x 0.3489328125 -y -0.15 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece17" respawn="false" output="screen" />
+	<node name="spawn_chesspiece60" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.518596875 -y 0.0875296875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece60" respawn="false" output="screen" />
+	<node name="spawn_chesspiece61" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.518596875 -y 0.053596875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece61" respawn="false" output="screen" />
+	<node name="spawn_chesspiece62" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.518596875 -y 0.0196640625 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece62" respawn="false" output="screen" />
+	<node name="spawn_chesspiece63" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.518596875 -y -0.01426875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece63" respawn="false" output="screen" />
+	<node name="spawn_chesspiece64" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.518596875 -y -0.0482015625 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece64" respawn="false" output="screen" />
+	<node name="spawn_chesspiece65" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.518596875 -y -0.082134375 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece65" respawn="false" output="screen" />
+	<node name="spawn_chesspiece66" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.518596875 -y -0.1160671875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece66" respawn="false" output="screen" />
+	<node name="spawn_chesspiece67" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.518596875 -y -0.15 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece67" respawn="false" output="screen" />
+	<node name="spawn_chesspiece70" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.5525296875 -y 0.0875296875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece70" respawn="false" output="screen" />
+	<node name="spawn_chesspiece71" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.5525296875 -y 0.053596875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece71" respawn="false" output="screen" />
+	<node name="spawn_chesspiece72" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.5525296875 -y 0.0196640625 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece72" respawn="false" output="screen" />
+	<node name="spawn_chesspiece73" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.5525296875 -y -0.01426875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece73" respawn="false" output="screen" />
+	<node name="spawn_chesspiece74" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.5525296875 -y -0.0482015625 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece74" respawn="false" output="screen" />
+	<node name="spawn_chesspiece75" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.5525296875 -y -0.082134375 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece75" respawn="false" output="screen" />
+	<node name="spawn_chesspiece76" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.5525296875 -y -0.1160671875 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece76" respawn="false" output="screen" />
+	<node name="spawn_chesspiece77" pkg="gazebo_tools" type="gazebo_model" args="-f $(find chessbot)/objects/blackchesspiece.urdf -x 0.5525296875 -y -0.15 -z 0.41 -R 0.0 -P 0.0 -Y 0.0 spawn chesspiece77" respawn="false" output="screen" />
 </launch>
