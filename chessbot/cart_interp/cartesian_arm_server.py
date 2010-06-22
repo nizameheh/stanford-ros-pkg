@@ -18,13 +18,13 @@ class CartesianArmServer:
         self.linear_position_error = None
         self._action_name = name
         self._as = actionlib.SimpleActionServer(self._action_name, cart_interp.msg.CartesianArmServerAction, execute_cb=self.execute)
-        rospy.Subscriber("/cartesian_arm_controller/state/x", PoseStamped, self.callback)
-        self.pub_posestamped = rospy.Publisher("/cartesian_arm_controller/command_pose", PoseStamped)
+        rospy.Subscriber("current_pose", PoseStamped, self.callback)
+        self.pub_posestamped = rospy.Publisher("command_pose", PoseStamped)
     
     def callback(self, data):
         self.currentpose = data.pose
         if (self.targetpose is not None):
-            self.linear_position_error=math.sqrt((self.targetpose.position.x-data.pose.position.x ** 2) + (self.targetpose.position.y-data.pose.position.y ** 2) + (self.targetpose.position.z-data.pose.position.z ** 2))
+            self.linear_position_error=math.sqrt((self.targetpose.position.x-data.pose.position.x) ** 2 + (self.targetpose.position.y-data.pose.position.y) ** 2 + (self.targetpose.position.z-data.pose.position.z) ** 2)
             rospy.logdebug(str(self.linear_position_error))
     
     def execute(self, goal):

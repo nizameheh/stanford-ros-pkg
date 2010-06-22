@@ -37,7 +37,7 @@ class Chessbot:
     def square_to_coordinate(self, square):
         row, col = square
         
-        #Using 3.5 sets square (0, 0) to be the middle of the lower left square
+        #Using offset 3.5 sets (0, 0) to be the middle of the lower left square
         board_x = (row - 3.5)*self.square_sidelength
         board_y = -(col - 3.5)*self.square_sidelength
         
@@ -87,13 +87,13 @@ class Chessbot:
     def close_gripper(self):
         close_grip = Pr2GripperCommandGoal()
         close_grip.command.position = 0.00
-        close_grip.command.max_effort = 100.0
+        close_grip.command.max_effort = self.gripper_close_max_effort
         self.gripper_client.send_goal(close_grip)
         self.gripper_client.wait_for_result()
 
     def open_gripper(self):
         open_grip = Pr2GripperCommandGoal()
-        open_grip.command.position = 0.04
+        open_grip.command.position = self.gripper_open_position
         open_grip.command.max_effort = -1.0
         self.gripper_client.send_goal(open_grip)
         self.gripper_client.wait_for_result()
@@ -147,6 +147,9 @@ class Chessbot:
         self.orientation.y = rospy.get_param('gripper_orientation/y')
         self.orientation.z = rospy.get_param('gripper_orientation/z')
         self.orientation.w = rospy.get_param('gripper_orientation/w')
+        self.gripper_open_position = rospy.get_param('gripper_open_position')
+        self.gripper_close_max_effort = rospy.get_param('gripper_close_max_effort')
+        self.root_frame = rospy.get_param('root_frame')
         self.board_centerpoint = None
         self.tflistener = tf.TransformListener()
         rospy.Subscriber("chessboard_detector/board_pose", PoseStamped, self.update_chessboard)

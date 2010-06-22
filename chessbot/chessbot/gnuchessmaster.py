@@ -77,12 +77,12 @@ def main():
     REGEX_RESULT = '((0-1)|(1-0)|(1/2-1/2)) {[a-zA-Z ]*}'
     
     rospy.init_node('gnuchessmaster')
-    chessbot_client = actionlib.SimpleActionClient('chessbot', chessbot.msg.ChessbotAction)
+    chessbot_client = actionlib.SimpleActionClient('/chessbot/chessbot', chessbot.msg.ChessbotAction)
     chessbot_client.wait_for_server()
     gnuchess = pexpect.spawn('/usr/games/gnuchess -x', maxread=1)
     i = 0
 
-    while (gnuchess.isalive()):
+    while (gnuchess.isalive() and not rospy.is_shutdown()):
         gnuchess.sendline('go')
         if (i % 2 == 0):
             print 'WHITE:'

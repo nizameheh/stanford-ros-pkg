@@ -89,11 +89,13 @@
         pkg="teleop_controllers" type="posture.py"
         args="l_cart elbowupl" />
 
-  <param name="success_threshold" value="0.02"/>
-  <node name="r_cart_action_server"
-  	pkg="cart_interp" type="cartesian_arm_server.py">
-    <remap from="cartesian_arm_controller" to="r_cart"/>
-  </node>
+  <group ns="right_arm">
+    <param name="success_threshold" value="0.02"/>
+    <node name="action_server" pkg="cart_interp" type="cartesian_arm_server.py">
+      <remap from="command_pose" to="/r_cart/command_pose"/>
+      <remap from="current_pose" to="/r_cart/state/x"/>
+    </node>
+  </group>
 
   <node name="r_gripper_controller"
   	pkg="pr2_controller_manager" type="pr2_controller_manager"
@@ -113,13 +115,14 @@
       </node>
     </group>
     <node name="chessbot" pkg="chessbot" type="chessbot.py">
-      <remap from="cartesian_arm_server" to="/r_cart_action_server"/>
+      <remap from="cartesian_arm_server" to="/right_arm/action_server"/>
       <remap from="gripper_server" to="/r_gripper_controller/gripper_action"/>
     </node>
     <rosparam>
       square_sidelength: 0.0339328125
       boardlevel_altitude: 0.04
       elevated_altitude: 0.15
+      root_frame: torso_lift_link
       out_of_sight_pose:
         position:
           x: 0.842470855969
@@ -135,6 +138,8 @@
         y: -0.780539478508
         z: 0.00205700227215
         w: -0.625090084256
+      gripper_open_position: 0.04
+      gripper_close_max_effort: 100.0
     </rosparam>
   </group>
 </launch>
