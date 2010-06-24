@@ -91,7 +91,7 @@
 
   <group ns="right_arm">
     <param name="success_threshold" value="0.02"/>
-    <param name="max_lead" value="0.03"/>
+    <param name="max_lead" value="0.10"/>
     <node name="action_server" pkg="cart_interp" type="cartesian_arm_server.py">
       <remap from="command_pose" to="/r_cart/command_pose"/>
       <remap from="current_pose" to="/r_cart/state/x"/>

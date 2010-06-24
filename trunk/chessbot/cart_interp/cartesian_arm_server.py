@@ -21,34 +21,43 @@ class CartesianArmServer:
         self._as = actionlib.SimpleActionServer(self._action_name, cart_interp.msg.CartesianArmServerAction, execute_cb=self.execute)
         rospy.Subscriber("current_pose", PoseStamped, self.callback)
         self.pub_posestamped = rospy.Publisher("command_pose", PoseStamped)
+        self.pub_targetpose = rospy.Publisher("target_pose", PoseStamped)
     
     def callback(self, data):
         self.currentpose = data.pose
         if (self.targetpose is not None):
-            self.linear_position_error=euclidean_distance(self.targetpose.position, data.pose.position)
-            rospy.logdebug(str(self.linear_position_error))
+            self.linear_position_error = euclidean_distance(self.targetpose.position, self.currentpose.position)
+            print(str(self.targetpose.position))
+            print(str(self.currentpose.position))
+            print(str(self.linear_position_error))
+            #rospy.loginfo(str(self.linear_position_error))
     
     def execute(self, goal):
         success = True
-        rate = rospy.Rate(10.0)
+        rate = rospy.Rate(5.0)
         self.targetpose = goal.setpoint.pose
+        self.pub_targetpose.publish(goal.setpoint)
         self.linear_position_error = None
-        while (self.linear_position_error is None or self.linear_position_error > self.success_threshold) and not rospy.is_shutdown():
+        while (self.linear_position_error is None):
+            rate.sleep()
+        while self.linear_position_error > self.success_threshold and not rospy.is_shutdown():
             if self._as.is_preempt_requested():
                 self._as.set_preempted()
                 success = False
                 break
-            setpoint = goal.setpoint
-            goal_distance = euclidean_distance(currentpose, targetpose)
-            if goal_distance > max_lead:
-                scaling_factor = max_lead/goal_distance
-                setpoint.point.x = (setpoint.point.x - currentpose.position.x)*scaling_factor+currentpose.position.x
-                setpoint.point.y = (setpoint.point.y - currentpose.position.y)*scaling_factor+currentpose.position.y
-                setpoint.point.z = (setpoint.point.z - currentpose.position.z)*scaling_factor+currentpose.position.z
-                
-            self.pub_posestamped.publish(setpoint)
+            waypoint = PoseStamped()
+            waypoint.pose = self.targetpose
+            waypoint.header.stamp = rospy.Time.now()
+            waypoint.header.frame_id =goal.setpoint.header.frame_id
+            if self.linear_position_error > self.max_lead:
+                scaling_factor = self.max_lead/self.linear_position_error
+                waypoint.pose.position.x = (self.targetpose.position.x - self.currentpose.position.x)*scaling_factor+self.currentpose.position.x
+                waypoint.pose.position.y = (self.targetpose.position.y - self.currentpose.position.y)*scaling_factor+self.currentpose.position.y
+                waypoint.pose.position.z = (self.targetpose.position.z - self.currentpose.position.z)*scaling_factor+self.currentpose.position.z
+                self.pub_posestamped.publish(waypoint)
             feedback = cart_interp.msg.CartesianArmServerFeedback()
             feedback.currentpoint = self.currentpose
+            rospy.loginfo(str(euclidean_distance(self.targetpose.position, waypoint.pose.position)))
             rate.sleep()
         if success:
             result = cart_interp.msg.CartesianArmServerResult()
@@ -56,7 +65,7 @@ class CartesianArmServer:
             self._as.set_succeeded(result)
 
 def euclidean_distance(point1, point2):
-    return math.sqrt((point1.x-point2.x) ** 2 + (point1.y-point2.y) ** 2 + (point1.z-point2.z) ** 2)
+    return math.sqrt(((point1.x-point2.x) ** 2) + ((point1.y-point2.y) ** 2) + ((point1.z-point2.z) ** 2))
 
 def main():
     rospy.init_node('cartesian_arm_server')
