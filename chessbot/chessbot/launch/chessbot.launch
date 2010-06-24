@@ -16,8 +16,8 @@
     pose_command_filter: 0.01
     cart_gains:
       trans:
-        p: 800.0
-        d: 15.0
+        p: 1000.0
+        d: 18.0
       rot:
         p: 90.0
         d: 1.2
@@ -120,8 +120,8 @@
     </node>
     <rosparam>
       square_sidelength: 0.0339328125
-      boardlevel_altitude: 0.04
-      elevated_altitude: 0.15
+      boardlevel_altitude: 0.07
+      elevated_altitude: 0.12
       root_frame: torso_lift_link
       out_of_sight_pose:
         position:
@@ -138,7 +138,7 @@
         y: -0.780539478508
         z: 0.00205700227215
         w: -0.625090084256
-      gripper_open_position: 0.04
+      gripper_open_position: 0.08
       gripper_close_max_effort: 100.0
     </rosparam>
   </group>
