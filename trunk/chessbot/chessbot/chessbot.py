@@ -51,13 +51,15 @@ class Chessbot:
 
     def pickup_piece(self, square):
         self.hover_over_square(square)
-        self.go_down_to_square(square)
+        rospy.sleep(2.0)
+        self.go_down_to_square(square, False)
         self.close_gripper()
         self.hover_over_square(square)
 
     def set_piece(self, square):
         self.hover_over_square(square)
-        self.go_down_to_square(square)
+        self.go_down_to_square(square, True)
+        rospy.sleep(2.0)
         self.open_gripper()
         self.hover_over_square(square)
         
@@ -77,10 +79,12 @@ class Chessbot:
         hover_over.orientation = self.orientation
         self.execute_pose(hover_over)
 
-    def go_down_to_square(self, square):
+    def go_down_to_square(self, square, compliance):
         down_to_square = Pose()
         down_to_square.position = self.square_to_coordinate(square)
         down_to_square.position.z += self.boardlevel_altitude
+        if compliance:
+            down_to_square.position.z += 0.01
         down_to_square.orientation = self.orientation
         self.execute_pose(down_to_square)
 
