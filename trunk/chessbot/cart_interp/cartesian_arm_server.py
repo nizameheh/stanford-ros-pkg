@@ -27,14 +27,11 @@ class CartesianArmServer:
         self.currentpose = data.pose
         if (self.targetpose is not None):
             self.linear_position_error = euclidean_distance(self.targetpose.position, self.currentpose.position)
-            print(str(self.targetpose.position))
-            print(str(self.currentpose.position))
-            print(str(self.linear_position_error))
-            #rospy.loginfo(str(self.linear_position_error))
+            rospy.loginfo('Position error: '+str(self.linear_position_error))
     
     def execute(self, goal):
         success = True
-        rate = rospy.Rate(5.0)
+        rate = rospy.Rate(10.0)
         self.targetpose = goal.setpoint.pose
         self.pub_targetpose.publish(goal.setpoint)
         self.linear_position_error = None
@@ -46,18 +43,26 @@ class CartesianArmServer:
                 success = False
                 break
             waypoint = PoseStamped()
-            waypoint.pose = self.targetpose
+            waypoint.pose.position.x = self.targetpose.position.x
+            waypoint.pose.position.y = self.targetpose.position.y
+            waypoint.pose.position.z = self.targetpose.position.z
+            waypoint.pose.orientation.x = self.targetpose.orientation.x
+            waypoint.pose.orientation.y = self.targetpose.orientation.y
+            waypoint.pose.orientation.z = self.targetpose.orientation.z
+            waypoint.pose.orientation.w = self.targetpose.orientation.w
             waypoint.header.stamp = rospy.Time.now()
             waypoint.header.frame_id =goal.setpoint.header.frame_id
+            """
             if self.linear_position_error > self.max_lead:
                 scaling_factor = self.max_lead/self.linear_position_error
                 waypoint.pose.position.x = (self.targetpose.position.x - self.currentpose.position.x)*scaling_factor+self.currentpose.position.x
                 waypoint.pose.position.y = (self.targetpose.position.y - self.currentpose.position.y)*scaling_factor+self.currentpose.position.y
                 waypoint.pose.position.z = (self.targetpose.position.z - self.currentpose.position.z)*scaling_factor+self.currentpose.position.z
-                self.pub_posestamped.publish(waypoint)
+            """
+            self.pub_posestamped.publish(waypoint)
             feedback = cart_interp.msg.CartesianArmServerFeedback()
             feedback.currentpoint = self.currentpose
-            rospy.loginfo(str(euclidean_distance(self.targetpose.position, waypoint.pose.position)))
+            rospy.loginfo('Target vs waypoint: '+str(euclidean_distance(self.targetpose.position, waypoint.pose.position)))
             rate.sleep()
         if success:
             result = cart_interp.msg.CartesianArmServerResult()
