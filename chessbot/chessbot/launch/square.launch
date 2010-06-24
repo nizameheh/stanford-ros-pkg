@@ -87,6 +87,8 @@
         pkg="teleop_controllers" type="posture.py"
         args="l_cart elbowupl" />
 
+  <param name="success_threshold" value="0.02"/>
+  <param name="max_lead" value="0.03"/>
   <node name="r_cart_action_server"
   	pkg="cart_interp" type="cartesian_arm_server.py"
 	args="r_cart" />
