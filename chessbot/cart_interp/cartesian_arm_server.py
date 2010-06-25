@@ -44,7 +44,7 @@ class CartesianArmServer:
                 success = False
                 break
             waypoint = PoseStamped()
-            waypoint.pose = copy.copy(self.targetpose)
+            waypoint.pose = copy.deepcopy(self.targetpose)
             waypoint.header.stamp = rospy.Time.now()
             waypoint.header.frame_id =goal.setpoint.header.frame_id
             if self.linear_position_error > self.max_lead:
