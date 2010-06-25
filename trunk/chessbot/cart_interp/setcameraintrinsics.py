@@ -22,12 +22,12 @@ def main():
     cam_info.R =
     cam_info.P =
 
-    cam_name = wide_stereo/right
-    #cam_name = wide_stereo/left
-    #cam_name = narrow_stereo/right
-    #cam_name = narrow_stereo/left
+    cam_name = "wide_stereo/right"
+    #cam_name = "wide_stereo/left"
+    #cam_name = "narrow_stereo/right"
+    #cam_name = "narrow_stereo/left"
 
-    cam_name = rospy.resolve_name("wide_stereo/right")
+    cam_name = rospy.resolve_name(cam_name)
     set_cal_service_name = cam_name + "/set_camera_info"
 
     print "Waiting for service [%s] to be available" % set_cal_service_name 

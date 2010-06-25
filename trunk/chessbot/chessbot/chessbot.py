@@ -105,6 +105,7 @@ class Chessbot:
     def move_piece(self, origin, destination):
         self.pickup_piece(origin)
         self.set_piece(destination)    
+        self.execute_pose(self.out_of_sight)
 
     def update_chessboard(self, board_pose):        
         if self.latch_chessboard:
