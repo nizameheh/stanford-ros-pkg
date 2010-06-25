@@ -102,8 +102,8 @@
     <param name="success_threshold" value="0.02"/>
     <param name="max_lead" value="0.08"/>
     <node name="action_server" pkg="cart_interp" type="cartesian_arm_server.py">
-      <remap from="command_pose" to="/r_cart/command_pose"/>
-      <remap from="current_pose" to="/r_cart/state/x"/>
+      <remap from="command_pose" to="/l_cart/command_pose"/>
+      <remap from="current_pose" to="/l_cart/state/x"/>
     </node>
   </group>
 
