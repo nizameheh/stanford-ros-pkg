@@ -35,11 +35,10 @@ volatile uint32_t g_motor_pos[NUM_MOTORS];
 volatile uint8_t  g_tx_pkt[TX_PKT_LEN], g_tx_pkt_read_pos = 0;
 volatile uint8_t  g_timer_flag = 0;
 
-
-ISR(USART0_RX_vect)
+ISR(USART1_RX_vect)
 {
-  volatile uint8_t b = UDR0;
-  UDR1 = b; // forward it along
+  volatile uint8_t b = UDR1;
+  UDR2 = UDR1; // forward it down the chain
   if (g_cmd_pkt_write_pos < CMD_PKT_LEN)
     g_cmd_pkt[g_cmd_pkt_write_pos++] = b;
   if (b == '\n')
@@ -74,26 +73,26 @@ ISR(USART0_RX_vect)
   }
 }
 
-ISR(USART0_TX_vect)
+ISR(USART1_TX_vect)
 {
   if (g_tx_pkt_read_pos < TX_PKT_LEN)
-    UDR0 = g_tx_pkt[g_tx_pkt_read_pos++];
+    UDR1 = g_tx_pkt[g_tx_pkt_read_pos++];
 }
 
 ISR(TIMER1_COMPA_vect)
 {
   if (PORTC & 0x01)
-    g_motor_pos[0]++;
+    g_motor_pos[2]++;
   else
-    g_motor_pos[0]--;
+    g_motor_pos[2]--;
 }
 
 ISR(TIMER3_COMPA_vect)
 {
   if (PORTC & 0x02)
-    g_motor_pos[1]++;
+    g_motor_pos[3]++;
   else
-    g_motor_pos[1]--;
+    g_motor_pos[3]--;
 }
 
 ISR(TIMER4_COMPA_vect)
@@ -107,7 +106,7 @@ uint8_t vel_to_ocr(uint8_t vel)
   // vel here means "X steps per second" where x is 5 or whatever
   if (vel == 0)
     return 255; // not really
-  uint16_t ocr = 2000 / (uint16_t)vel;
+  uint16_t ocr = 1500 / (uint16_t)vel;
   //uint16_t ocr = 16384 / (uint16_t)vel;
   if (ocr > 255) // too slow
     ocr = 255;
@@ -121,13 +120,13 @@ void send_tx_pkt()
   uint8_t csum = 0, i;
   g_tx_pkt[0] = 0xfe;
   g_tx_pkt[1] = 8;
-  *((uint32_t *)(g_tx_pkt+2)) = g_motor_pos[0];
-  *((uint32_t *)(g_tx_pkt+6)) = g_motor_pos[1];
+  *((uint32_t *)(g_tx_pkt+2)) = g_motor_pos[2];
+  *((uint32_t *)(g_tx_pkt+6)) = g_motor_pos[3];
   g_tx_pkt_read_pos = 1;
   for (i = 1; i < 10; i++)
     csum += g_tx_pkt[i];
   g_tx_pkt[10] = csum;
-  UDR0 = g_tx_pkt[0];
+  UDR1 = g_tx_pkt[0];
 }
 
 int main(void)
@@ -163,16 +162,15 @@ int main(void)
   OCR3A = 0xf0;
   OCR4A = 0x009b; // delay between tx packets, units of X/16khz
 
-  UBRR0  = 0; // 1 megabaud
-  UCSR0A = 0;
-  UCSR0B = _BV(RXEN0)  | _BV(RXCIE0) | _BV(TXEN0) | _BV(TXCIE0);
-  UCSR0C = _BV(UCSZ01) | _BV(UCSZ00); // 8n1
-
   UBRR1  = 0; // 1 megabaud
   UCSR1A = 0;
-  UCSR1B = _BV(RXEN1)  | _BV(TXEN0);
+  UCSR1B = _BV(RXEN1)  | _BV(RXCIE1) | _BV(TXEN1) | _BV(TXCIE1);
   UCSR1C = _BV(UCSZ11) | _BV(UCSZ10); // 8n1
 
+  UBRR2  = 0;
+  UCSR2A = 0;
+  UCSR2B = _BV(RXEN2) | _BV(TXEN2);
+  UCSR2C = _BV(UCSZ21) | _BV(UCSZ20); // 8n1
   sei();
 
   g_motor_dir = 0;
@@ -195,16 +193,16 @@ int main(void)
       send_tx_pkt();
     }
 
-    if (g_tgt_update[0] &&  // update and we're at rollover or clock stopped
+    if (g_tgt_update[2] &&  // update and we're at rollover or clock stopped
         ((TCNT1 == 0 || TCCR1A == 0x00) || !(TCCR1B & _BV(CS12))))
     {
-      g_tgt_update[0] = 0;
-      if (g_motor_dir & 0x01)
+      g_tgt_update[2] = 0;
+      if (g_motor_dir & 0x04)
         PORTC |= 0x01;
       else
         PORTC &= ~0x01;
-      OCR1A = vel_to_ocr(g_motor_vel[0]);
-      if (g_motor_vel[0] == 0)
+      OCR1A = vel_to_ocr(g_motor_vel[2]);
+      if (g_motor_vel[2] == 0)
       {
         TCCR1A = 0x00;
         TCCR1B &= ~(_BV(CS12) | _BV(CS10)); // stop timer clock
@@ -215,16 +213,16 @@ int main(void)
         TCCR1B |= _BV(CS12) | _BV(CS10);
       }
     }
-    if (g_tgt_update[1] &&
+    if (g_tgt_update[3] &&
         ((TCNT3 == 0 || TCCR3A == 0x00) || !(TCCR3B & _BV(CS32))))
     {
-      g_tgt_update[1] = 0;
-      if (g_motor_dir & 0x02)
+      g_tgt_update[3] = 0;
+      if (g_motor_dir & 0x08)
         PORTC |= 0x02;
       else
         PORTC &= ~0x02;
-      OCR3A = vel_to_ocr(g_motor_vel[1]);
-      if (g_motor_vel[1] == 0)
+      OCR3A = vel_to_ocr(g_motor_vel[3]);
+      if (g_motor_vel[3] == 0)
       {
         TCCR3A = 0x00;
         TCCR3B &= ~(_BV(CS32) | _BV(CS30)); // stop timer clock
