@@ -6,7 +6,7 @@ from openarms.msg import StepperTarget
 from joy.msg import Joy
 
 if __name__ == '__main__':
-  g_vel = [0,0,0,0,0,0,0]
+  g_vel = [0,0,0,0,0]
   prev_buttons = None
 
   def joy_update_0(msg_0):
@@ -42,13 +42,13 @@ if __name__ == '__main__':
   cmd_step = StepperTarget()
   r = rospy.Rate(100)
   while not rospy.is_shutdown():
-    cmd_step.mode = [2,2,2,2,2,2,2] # velocity mode 
-    cmd_step.vel = [0,0,0,0,0,0,0]
-    for motor_idx in xrange(0, 4):
+    cmd_step.mode = [2,2,2,2,2] # velocity mode 
+    cmd_step.vel = [0,0,0,0,0]
+    for motor_idx in xrange(0, 5):
       if g_vel[motor_idx] > 0:
         cmd_step.mode[motor_idx] += 128
       cmd_step.vel[motor_idx] = int(abs(g_vel[motor_idx]))
-    cmd_step.pos = [0,0,0,0,0,0,0]
+    cmd_step.pos = [0,0,0,0,0]
     pub_step.publish(cmd_step)
     print g_vel
     r.sleep()
