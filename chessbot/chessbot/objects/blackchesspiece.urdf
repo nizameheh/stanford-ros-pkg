@@ -1,0 +1,32 @@
+<robot name="chesspiece">
+  <link name="my_cylinder">
+    <inertial>
+      <mass value="0.2" />
+      <!-- center of mass (com) is defined w.r.t. link local coordinate system -->
+      <origin xyz="0 0 0" /> 
+      <inertia  ixx="0.01" ixy="0.0"  ixz="0.0"  iyy="0.01"  iyz="0.0"  izz="0.01" />
+    </inertial>
+    <visual>
+      <!-- visual origin is defined w.r.t. link local coordinate system -->
+      <origin xyz="0 0 0.01905" rpy="0 0 0" />
+      <geometry>
+        <box size="0.01 0.01 0.0381" />
+      </geometry>
+    </visual>
+    <collision>
+      <!-- collision origin is defined w.r.t. link local coordinate system -->
+      <origin xyz="0 0 0.01905" rpy="0 0 0 " />
+      <geometry>
+        <box size="0.01 0.01 0.0381" />
+      </geometry>
+    </collision>
+  </link>
+  <gazebo reference="my_cylinder">
+    <material>Gazebo/Black</material>
+    <turnGravityOff>false</turnGravityOff>
+    <mu1>1000.0</mu1>
+    <mu2>1000.0</mu2>
+    <kp>10000000.0</kp>
+    <kd>1.0</kd>
+  </gazebo>
+</robot>
