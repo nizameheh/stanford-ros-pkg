@@ -1,8 +1,10 @@
+// bsd license blah blah
 #include <cstring>
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
+#include <tf_conversions/tf_kdl.h>
 #include "openarms/ArmSensors.h"
 #include "wiimote/State.h"
 #include <Eigen/Core>
@@ -10,10 +12,15 @@
 #include <Eigen/LU>
 #include "robot_state_publisher/treefksolverposfull_recursive.hpp"
 #include <string>
+#include <map>
 #include <kdl_parser/kdl_parser.hpp>
 using std::string;
-
+using std::map;
+using std::make_pair;
 using namespace Eigen;
+
+// (MQ:) much of the interface code between ROS and KDL in this code is lifted
+// straight from Wim Meeussen's robot_state_publisher
 
 class EKF
 {
@@ -25,6 +32,16 @@ public:
   MatrixXd cov, transition_cov, meas_cov;
   //tf::TransformListener tf_listener;
   tf::StampedTransform upperarm_tf, lowerarm_tf;
+  KDL::Tree *tree;
+  boost::scoped_ptr<KDL::TreeFkSolverPosFull_recursive> fk_solver;
+  std::string tree_root_name;
+
+  EKF(KDL::Tree *init_tree) : tree(init_tree)
+  {
+    fk_solver.reset(new KDL::TreeFkSolverPosFull_recursive(*tree));
+    KDL::SegmentMap::const_iterator root_seg = tree->getRootSegment();
+    tree_root_name = root_seg->first;
+  }
 
   void init(const VectorXd &init_mean, const MatrixXd &init_cov,
             const MatrixXd &init_transition_cov,
@@ -79,15 +96,29 @@ public:
     */
     return true;
   }
-  /*
   VectorXd z(const VectorXd &x)
   {
-    
+    map<string, double> joint_pos;
+    joint_pos.insert(make_pair("shoulder_flexion", x[0]));
+    joint_pos.insert(make_pair("shoulder_abduction", x[1]));
+    joint_pos.insert(make_pair("humeral_rotation", x[2]));
+    joint_pos.insert(make_pair("elbow", x[3]));
+    map<string, KDL::Frame> link_poses;
+    fk_solver->JntToCart(joint_pos, link_poses);
+    if (link_poses.size() < 4)
+      ROS_ERROR("couldn't compute link poses.");
+    for (map<string, KDL::Frame>::const_iterator f = link_poses.begin();
+         f != link_poses.end(); ++f)
+    {
+      tf::Transform tf_frame;
+      tf::TransformKDLToTF(f->second, tf_frame);
+      ROS_DEBUG("%s -> %s", tree_root_name.c_str(), f->first.c_str());
+    }
+    return VectorXd(12);
   }
-  */
   void update()
   {
-
+    z(mean);
   }
 };
 
@@ -188,7 +219,7 @@ int main(int argc, char **argv)
   for (int i = 6; i < 12; i++)
     init_meas_cov(i, i) = 0.2; // gyro noise
 
-  EKF ekf;
+  EKF ekf(&tree);
   ekf.init(init_mean, init_cov, init_transition_cov, init_meas_cov);
   g_ekf = &ekf;
 
