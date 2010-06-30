@@ -1,0 +1,122 @@
+<?xml version="1.0" ?>
+<robot name="human">
+  <link name="torso_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 -.20"/>
+      <geometry>
+        <box size = ".355 0.178 .558"/>
+      </geometry>
+      <material name="Red">
+        <color rgba="0.8 0.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="shoulder_flexion_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 .228" rpy="0 0 0"/>
+      <geometry>
+        <box size=".1 .1 .1"/>
+      </geometry>
+      <material name="Green"> 
+        <color rgba="0.0 1.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="shoulder_abduction_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz=".06 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size=".2 .09 .09"/>
+      </geometry>
+      <material name="Yellow">
+        <color rgba="1.0 1.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="humeral_rotation_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 0.28" rpy="0 0 0"/>
+      <geometry>
+        <box size=".08 .08 .25"/>
+      </geometry>
+      <material name="Cyan">
+        <color rgba="0.0 1.0 1.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="elbow_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz=".2 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.44 .07 .07"/>
+      </geometry>
+      <material name="Magenta">
+        <color rgba="1.0 0.0 1.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="upperarm_wiimote_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size=".04 .178 .03"/>
+      </geometry>
+      <material name="Pinkish">
+        <color rgba="1.0 0.8 0.8 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="lowerarm_wiimote_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size=".04 .178 .03"/>
+      </geometry>
+      <material name="Pinkish">
+        <color rgba="1.0 0.8 0.8 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="shoulder_flexion" type="continuous">
+    <parent link="torso_link"/>
+    <child link="shoulder_flexion_link"/>
+    <origin xyz="0 0 0" rpy="0 1.57 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="shoulder_abduction" type="continuous">
+    <parent link="shoulder_flexion_link"/>
+    <child link="shoulder_abduction_link"/>
+    <origin xyz="0 0 0.278" rpy="-1.57 -0.3 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="humeral_rotation" type="continuous">
+    <parent link="shoulder_abduction_link"/>
+    <child link="humeral_rotation_link"/>
+    <origin xyz="0 0 0" rpy="3.14 -1.57 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="elbow" type="continuous">
+    <parent link="humeral_rotation_link"/>
+    <child link="elbow_link"/>
+    <origin xyz="0 0 .40" rpy="-1.57 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="upperarm_wiimote" type="fixed">
+    <parent link="humeral_rotation_link"/>
+    <child link="upperarm_wiimote_link"/>
+    <origin xyz="0.0 0.05 0.26" rpy="1.57 0 3.14"/>
+  </joint>
+  <joint name="lowerarm_wiimote" type="fixed">
+    <parent link="elbow_link"/>
+    <child link="lowerarm_wiimote_link"/>
+    <origin xyz="0.20 0.0 0.05" rpy="0 0 1.57"/>
+  </joint>
+</robot>
+

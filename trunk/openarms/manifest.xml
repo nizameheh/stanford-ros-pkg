@@ -11,5 +11,7 @@
   <depend package="serial_port"/>
   <depend package="tf"/>
   <depend package="joy"/>
+  <depend package="wiimote"/>
+  <depend package="robot_state_publisher"/>
 </package>
 
