@@ -105,39 +105,107 @@ public:
     joint_pos.insert(make_pair("elbow", x[3]));
     map<string, KDL::Frame> link_poses;
     fk_solver->JntToCart(joint_pos, link_poses);
+    VectorXd pred_sensors = VectorXd::Zero(12);
     if (link_poses.size() < 4)
       ROS_ERROR("couldn't compute link poses.");
     for (map<string, KDL::Frame>::const_iterator f = link_poses.begin();
          f != link_poses.end(); ++f)
     {
-      tf::Transform tf_frame;
-      tf::TransformKDLToTF(f->second, tf_frame);
-      ROS_DEBUG("%s -> %s", tree_root_name.c_str(), f->first.c_str());
+      if (f->first == "upperarm_wiimote_link")
+      {
+        tf::Transform tf_frame;
+        tf::TransformKDLToTF(f->second, tf_frame);
+        btVector3 accel = tf_frame.getBasis().getRow(2);
+        pred_sensors[0] = accel.x();
+        pred_sensors[1] = accel.y();
+        pred_sensors[2] = accel.z();
+        /*
+        ROS_INFO("predicted upperarm: %+05.2f %+05.2f %+05.2f",
+                 accel.x(), accel.y(), accel.z());
+        */
+      }
+      else if (f->first == "lowerarm_wiimote_link")
+      {
+        tf::Transform tf_frame;
+        tf::TransformKDLToTF(f->second, tf_frame);
+        btVector3 accel = tf_frame.getBasis().getRow(2);
+        pred_sensors[3] = accel.x();
+        pred_sensors[4] = accel.y();
+        pred_sensors[5] = accel.z();
+        /*
+        ROS_INFO("predicted lowerarm: %+05.2f %+05.2f %+05.2f",
+                 accel.x(), accel.y(), accel.z());
+        */
+      }
     }
-    return VectorXd(12);
+    return pred_sensors;
   }
-  void update()
+  void update(const VectorXd &meas)
   {
-    z(mean);
+    const double DELTA = 0.0001; // numerical derivatives
+    // state update ////////////////////////////////////////////////////////
+    // predict the next mean
+    VectorXd pred_mean = f(mean);
+    // predict covariance: compute linearization of transition function at mean
+    MatrixXd A(N, N);
+    for (int j = 0; j < N; j++)
+    {
+      VectorXd bumped = mean;
+      bumped(j) += DELTA;
+      VectorXd bumped_next = f(bumped);
+      A.col(j) = (bumped_next - pred_mean) / DELTA;
+    }
+    MatrixXd pred_cov = A * cov * A.transpose() + transition_cov;
+    // measurement update //////////////////////////////////////////////////
+    // compute linearization C of the measurement function z at predicted mean
+    VectorXd pred_meas = z(pred_mean);
+    MatrixXd C(K, N);
+    for (int j = 0; j < N; j++)
+    {
+      VectorXd bumped = pred_mean;
+      bumped(j) += DELTA;
+      VectorXd bumped_meas = z(bumped);
+      C.col(j) = (bumped_meas - pred_meas) / DELTA;
+    }
+    // compute kalman gain
+    MatrixXd t = C * pred_cov * C.transpose() + meas_cov;
+    MatrixXd KG = pred_cov * C.transpose() * t.inverse();
+    mean = pred_mean + KG * (meas - pred_meas);
+    cov = (MatrixXd::Identity(N, N) - KG * C) * pred_cov;
   }
 };
 
 ros::Publisher *g_joint_pub = NULL;
 tf::TransformBroadcaster *g_tf_broadcaster = NULL;
 EKF *g_ekf = NULL;
+bool g_wm2_valid = false;
+VectorXd g_wm2;
+
+void wiimote2_cb(const wiimote::State::ConstPtr &msg)
+{
+  g_wm2[0] = msg->linear_acceleration_zeroed.x;
+  g_wm2[1] = msg->linear_acceleration_zeroed.y;
+  g_wm2[2] = msg->linear_acceleration_zeroed.z;
+  g_wm2.normalize();
+  g_wm2_valid = true;
+}
 
 void wiimote_cb(const wiimote::State::ConstPtr &msg)
 {
+  if (!g_wm2_valid)
+    return;
   /*
   printf("wiimote %+05.2f %+05.2f %+05.2f\n",
          msg->angular_velocity_zeroed.x,
          msg->angular_velocity_zeroed.y,
          msg->angular_velocity_zeroed.z);
   */
+  /*
   printf("wiimote accels %+05.2f %+05.2f %+05.2f\n",
          msg->linear_acceleration_zeroed.x,
          msg->linear_acceleration_zeroed.y,
          msg->linear_acceleration_zeroed.z);
+  */
 
   sensor_msgs::JointState master_state;
   master_state.header.stamp = ros::Time::now();
@@ -147,13 +215,42 @@ void wiimote_cb(const wiimote::State::ConstPtr &msg)
   master_state.name[1] = "shoulder_abduction";
   master_state.name[2] = "humeral_rotation";
   master_state.name[3] = "elbow";
+  /*
   master_state.position[0] = .3;
-  master_state.position[1] = -.3;
-  master_state.position[2] = 1.0;
+  master_state.position[1] = -.6;
+  master_state.position[2] = -1.0;
   master_state.position[3] = 0.3;
+  */
+  /*
+  VectorXd x = VectorXd::Zero(8);
+  for (int i = 0; i < 4; i++)
+    x[i] = master_state.position[i];
+  */
+  //g_ekf->z(x);
+  //if (g_ekf->update_tf())
+  VectorXd meas = VectorXd::Zero(12);
+  meas[0] = msg->linear_acceleration_zeroed.x;
+  meas[1] = msg->linear_acceleration_zeroed.y;
+  meas[2] = msg->linear_acceleration_zeroed.z;
+  meas.normalize();
+
+  // copy over accelerometers from second wiimote
+  for (int i = 0; i < 3; i++)
+    meas[i+3] = g_wm2[i];
+
+  printf("\n");
+  for (int i = 0; i < 6; i++)
+    printf("%+05.2f  ", meas[i]);
+  printf("\n");
+
+
+  g_ekf->update(meas);
+
+  master_state.position[0] = g_ekf->mean[0];
+  master_state.position[1] = g_ekf->mean[1];
+  master_state.position[2] = g_ekf->mean[2];
+  master_state.position[3] = g_ekf->mean[3];
   g_joint_pub->publish(master_state);
-  if (g_ekf->update_tf())
-    g_ekf->update();
 }
 
 int main(int argc, char **argv)
@@ -161,6 +258,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "wiimote_master");
   ros::NodeHandle n;
   ros::NodeHandle n_private("~");
+  g_wm2 = VectorXd::Zero(6);
 
   ///////////////////////////////////////////////////////////////////////
   // this code lifted from the robot_state_publisher package
@@ -186,6 +284,7 @@ int main(int argc, char **argv)
   ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("master_state", 1);
   g_joint_pub = &joint_pub; // ugly ugly
   ros::Subscriber wiimote_sub = n.subscribe("wiimote/state", 1, wiimote_cb);
+  ros::Subscriber wiimote2_sub = n.subscribe("wiimote2/state", 1, wiimote2_cb);
   tf::TransformBroadcaster tf_broadcaster;
   g_tf_broadcaster = &tf_broadcaster;
   ros::Rate loop_rate(100);
