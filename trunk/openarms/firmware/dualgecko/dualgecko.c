@@ -27,6 +27,7 @@ volatile uint8_t g_rx_instruction = 0, g_rx_checksum = 0;
 volatile uint8_t g_rx_param_writepos, g_rx_param[RX_MAX_PARAM];
 volatile uint8_t g_tx_pkt[TX_MAX_LENGTH], g_tx_pkt_len = 0;
 volatile uint8_t g_tx_pkt_readpos = 0;
+volatile uint8_t g_last_byte = 0;
 
 // this assumes that g_tx_pkt and g_tx_pkt_len have been stuffed
 void send_packet(uint8_t tx_data_len)
@@ -56,12 +57,21 @@ void process_byte(uint8_t b)
     case RX_STATE_PREAMBLE_1:
       if (b == 0xff)
         g_rx_state = RX_STATE_PREAMBLE_2;
+      else
+      {
+        static uint8_t unexpected = 0;
+        unexpected++;
+      }
       break;
     case RX_STATE_PREAMBLE_2:
       if (b == 0xff)
         g_rx_state = RX_STATE_ID;
       else
+      {
+        static uint8_t unexpected2 = 0;
+        unexpected2++;
         g_rx_state = RX_STATE_PREAMBLE_1; // reset and try to re-sync
+      }
       break;
     case RX_STATE_ID:
       if (b < 254)
@@ -87,7 +97,10 @@ void process_byte(uint8_t b)
       {
         g_rx_instruction = b;
         g_rx_checksum += b;
-        g_rx_state = RX_STATE_PARAMETER;
+        if (g_rx_length > 2)
+          g_rx_state = RX_STATE_PARAMETER;
+        else
+          g_rx_state = RX_STATE_CHECKSUM;
       }
       else
         g_rx_state = RX_STATE_PREAMBLE_1;
@@ -101,7 +114,8 @@ void process_byte(uint8_t b)
       break;
     case RX_STATE_CHECKSUM:
       g_rx_state = RX_STATE_PREAMBLE_1;
-      if (b == ~g_rx_checksum)
+      g_rx_checksum = ~g_rx_checksum;
+      if (b == g_rx_checksum)
       {
         if (g_rx_id == MY_ID)
         {
@@ -138,7 +152,8 @@ void process_byte(uint8_t b)
 
 ISR(USARTF0_RXC_vect)
 {
-  process_byte(USARTF0.DATA);
+  g_last_byte = USARTF0.DATA;
+  process_byte(g_last_byte);
 }
 
 ISR(USARTF0_TXC_vect)
@@ -170,7 +185,7 @@ int main(void)
   USARTF0.BAUDCTRLA = (uint8_t)bsel;
   USARTF0.BAUDCTRLB = (bscale << 4) | (bsel >> 8);
   USARTF0.CTRLA = USART_RXCINTLVL_LO_gc; // rx fires a low-level interrupt
-  USARTF0.CTRLB = USART_TXEN_bm;
+  USARTF0.CTRLB = USART_TXEN_bm | USART_RXEN_bm;
   USARTF0.CTRLC = USART_CHSIZE_8BIT_gc;
 
   PMIC.CTRL |= PMIC_LOLVLEN_bm; // enable low-level interrupts
