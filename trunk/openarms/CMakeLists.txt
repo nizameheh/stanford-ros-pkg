@@ -77,6 +77,7 @@ rosbuild_genmsg()
 
 #rosbuild_add_executable(oa-hand drivers/oa-hand.cpp)
 rosbuild_add_executable(oa-gripper drivers/oa-gripper.cpp)
+rosbuild_add_executable(armbus drivers/armbus.cpp)
 rosbuild_add_executable(oa-torso drivers/oa-torso.cpp)
 rosbuild_add_executable(oa-upperarm drivers/oa-upperarm.cpp)
 rosbuild_add_executable(oa-state state/oa-state.cpp)
