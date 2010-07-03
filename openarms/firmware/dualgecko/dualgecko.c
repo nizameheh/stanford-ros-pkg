@@ -359,13 +359,14 @@ int main(void)
 
   PORTD.DIRSET = PIN4_bm | PIN5_bm | PIN7_bm;
   PORTD.OUTSET = PIN4_bm | PIN7_bm;
-  SPID.CTRL = SPI_ENABLE_bm | SPI_MODE0_bm | SPI_MODE1_bm | SPI_MASTER_bm | SPI_PRESCALER0_bm;
+  SPID.CTRL = SPI_ENABLE_bm | SPI_MODE0_bm | SPI_MODE1_bm | SPI_MASTER_bm | SPI_PRESCALER_DIV64_gc;
+
 
   sei();
 
   while(1)
   {
-    _delay_ms(100);
+    _delay_ms(10);
     poll_accel();
   }
   return 0; // or not
