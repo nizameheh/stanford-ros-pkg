@@ -15,6 +15,7 @@
 
 LightweightSerial *g_serial = NULL; 
 const size_t NUM_MOTORS = 3;
+enum rx_state_t { STEPPER_POS, SERVO_POS } g_rx_state;
 // the servos are assumed to be programmed as 0,1,..,NUM_MOTORS
 
 bool process_byte(uint8_t b) //, ros::Publisher *pub)
@@ -57,7 +58,12 @@ bool process_byte(uint8_t b) //, ros::Publisher *pub)
     case ERR:
       s_err = b;
       if (!s_err)
-        s_state = DATA;
+      {
+        if (expected_len > 2)
+          s_state = DATA;
+        else
+          s_state = CHECKSUM;
+      }
       else
         s_state = CHECKSUM;
       break;
@@ -75,11 +81,29 @@ bool process_byte(uint8_t b) //, ros::Publisher *pub)
       local_csum = ~local_csum;
       if (local_csum == b)
       {
-        uint16_t pos = pkt[0] + (uint16_t)(pkt[1] << 8);
-        printf("%d: %5d\n", servo_id, pos);
+        printf("packet from %d\n", servo_id);
+        if (g_rx_state == STEPPER_POS && expected_len == 8+2)
+        {
+          uint32_t pos_0 = (uint32_t) pkt[0]        + 
+                           (uint32_t)(pkt[1] << 8)  +
+                           (uint32_t)(pkt[2] << 16) +
+                           (uint32_t)(pkt[3] << 24);
+          uint32_t pos_1 = (uint32_t) pkt[4]        + 
+                           (uint32_t)(pkt[5] << 8)  +
+                           (uint32_t)(pkt[6] << 16) +
+                           (uint32_t)(pkt[7] << 24);
+          printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
+        }
+        else if (g_rx_state == SERVO_POS)
+        {
+          uint16_t pos = pkt[0] + (uint16_t)(pkt[1] << 8);
+          printf("%d: %5d\n", servo_id, pos);
+        }
+        /*
         //printf("packet ok\n");
         //printf("%d byte packet\n", expected_len);
         //pub->publish(msg);
+        */
         return true;
       }
       else
@@ -98,34 +122,51 @@ uint8_t calc_checksum(uint8_t *pkt, uint8_t pkt_len)
   return ~checksum;
 }
 
+void write_data(uint8_t id, uint8_t addr, uint8_t length, uint8_t *data)
+{
+  uint8_t pkt[300];
+  pkt[0] = 0xff;
+  pkt[1] = 0xff;
+  pkt[2] = id;
+  pkt[3] = length + 3;
+  pkt[4] = 0x03; // "write data"
+  pkt[5] = addr;
+  for (int i = 0; i < length; i++)
+    pkt[6+i] = data[i];
+  pkt[6+length] = calc_checksum(pkt, 6+length);
+  g_serial->write_block(pkt, 7+length);
+}
+
 void send_torque(uint8_t id, uint16_t torque, uint8_t dir)
 {
   // implemented from the robotis user's manual, page 16
-  uint8_t pkt[20];
-  pkt[0] = 0xff;
-  pkt[1] = 0xff;
-  pkt[2] = (uint8_t)id;
-  pkt[3] = 5; // 3 parameters + 2
-  pkt[4] = 0x03; // "write data" instruction
-  pkt[5] = 0x20; // "moving speed" register
-  pkt[6] = (uint8_t)(torque & 0xff);
-  pkt[7] = (uint8_t)((0x3 & (torque >> 8))) | (dir ? 0x04 : 0x00);
-  pkt[8] = calc_checksum(pkt, 8);
-  g_serial->write_block(pkt, 9);
+  uint8_t data[20];
+  data[0] = (uint8_t)(torque & 0xff);
+  data[1] = (uint8_t)((0x3 & (torque >> 8))) | (dir ? 0x04 : 0x00);
+  write_data(id, 0x20, 2, data); // "moving speed" register
+}
+
+void send_stepper_vel(uint8_t id, uint16_t vel_0, uint16_t vel_1)
+{
+  uint8_t data[20];
+  data[0] = (uint8_t)(vel_0 & 0xff);
+  data[1] = (uint8_t)(vel_0 >> 8);
+  data[2] = (uint8_t)(vel_1 & 0xff);
+  data[3] = (uint8_t)(vel_1 >> 8);
+  write_data(id, 0x20, 4, data);
 }
 
 void enable_motors(uint8_t enable)
 {
-  uint8_t pkt[20];
-  pkt[0] = 0xff;
-  pkt[1] = 0xff;
-  pkt[2] = 0xfe; // broadcast
-  pkt[3] = 4; // 2 parameters + 2
-  pkt[4] = 0x03; // "write data"
-  pkt[5] = 0x18; // torque on/off
-  pkt[6] = (enable ? 1 : 0);
-  pkt[7] = calc_checksum(pkt, 7);
-  g_serial->write_block(pkt, 8);
+  uint8_t data = (enable ? 1 : 0);
+  write_data(0xfe, 0x18, 1, &data);
+}
+
+void enable_led(uint8_t id, uint8_t enable)
+{
+  uint8_t data = (enable ? 1 : 0);
+  //printf("set led on motor %x to %d\n", id, data);
+  write_data(id, 0x19, 1, &data);
 }
 
 void query_motor(uint8_t id)
@@ -141,6 +182,34 @@ void query_motor(uint8_t id)
   pkt[7] = calc_checksum(pkt, 7);
   g_serial->write_block(pkt, 8);
 }
+
+void query_stepper_positions(uint8_t id)
+{
+  uint8_t pkt[20];
+  pkt[0] = 0xff;
+  pkt[1] = 0xff;
+  pkt[2] = id;
+  pkt[3] = 4; // 2 parameters + 2
+  pkt[4] = 0x02; // "read data"
+  pkt[5] = 0x24; // present position
+  pkt[6] = 8; // read LSB and MSB
+  pkt[7] = calc_checksum(pkt, 7);
+  g_serial->write_block(pkt, 8);
+}
+
+void ping_motor(uint8_t id)
+{
+  uint8_t pkt[20];
+  pkt[0] = 0xff;
+  pkt[1] = 0xff;
+  pkt[2] = id;
+  pkt[3] = 2; // 0 parameters + 2 overhead
+  pkt[4] = 0x01; // ping instruction
+  pkt[5] = calc_checksum(pkt, 5);
+  printf("pinging motor %d, checksum %x\n", id, pkt[5]);
+  g_serial->write_block(pkt, 6);
+}
+
 /*
 void wrist_torques_cb(const openarms::ArmActuators::ConstPtr &msg)
 {
@@ -178,6 +247,7 @@ int main(int argc, char **argv)
   //ros::spin();
   //enable_motors(1);
   
+  bool even = false;
   while (n.ok())
   {
     uint8_t read_buf[60];
@@ -186,9 +256,9 @@ int main(int argc, char **argv)
     {
       for (int i = 0; i < nread; i++)
       {
-        printf("    %x %c\n", read_buf[i], read_buf[i]);
-        //if (process_byte(read_buf[i])) //, &pub))
-        //  ros::spinOnce();
+        //printf("    %x\n", read_buf[i]);
+        if (process_byte(read_buf[i])) //, &pub))
+          ros::spinOnce();
       }
     }
     else
@@ -196,14 +266,19 @@ int main(int argc, char **argv)
     ros::spinOnce();
     // blast status-request packets periodically
     ros::Time t = ros::Time::now();
-#if 0
-    if ((t - t_prev).toSec() > 0.1)
+    if ((t - t_prev).toSec() > 0.01)
     {
+      enable_led(10, even ? 1 : 0);
+      even = !even;
+      send_stepper_vel(10, 0x10, 0xffff);
+      query_stepper_positions(10);
+#if 0
       for (size_t i = 0; i < 1 /*NUM_MOTORS*/; i++)
         query_motor(i);
+#endif
+      //ping_motor(10);
       t_prev = t;
     }
-#endif
   }
   //enable_motors(0); // turn em off
   delete s;
