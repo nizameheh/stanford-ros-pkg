@@ -81,7 +81,7 @@ bool process_byte(uint8_t b) //, ros::Publisher *pub)
       local_csum = ~local_csum;
       if (local_csum == b)
       {
-        printf("packet from %d\n", servo_id);
+        //printf("packet from %d\n", servo_id);
         if (g_rx_state == STEPPER_POS && expected_len == 8+2)
         {
           uint32_t pos_0 = (uint32_t) pkt[0]        + 
@@ -92,7 +92,7 @@ bool process_byte(uint8_t b) //, ros::Publisher *pub)
                            (uint32_t)(pkt[5] << 8)  +
                            (uint32_t)(pkt[6] << 16) +
                            (uint32_t)(pkt[7] << 24);
-          printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
+          //printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
         }
         else if (g_rx_state == SERVO_POS)
         {
