@@ -21,13 +21,24 @@
 #define TX_DATA_START        5
 #define TX_EXTRA_DELAY_US    10
 
+#define MIN_TIMER_TOP        100
+
 volatile uint8_t g_rx_state = RX_STATE_PREAMBLE_1;
-volatile uint8_t g_rx_id = 0, g_rx_length = 0;
-volatile uint8_t g_rx_instruction = 0, g_rx_checksum = 0;
-volatile uint8_t g_rx_param_writepos, g_rx_param[RX_MAX_PARAM];
-volatile uint8_t g_tx_pkt[TX_MAX_LENGTH], g_tx_pkt_len = 0;
+volatile uint8_t g_rx_id = 0;
+volatile uint8_t g_rx_length = 0;
+volatile uint8_t g_rx_instruction = 0;
+volatile uint8_t g_rx_checksum = 0;
+volatile uint8_t g_rx_param_writepos;
+volatile uint8_t g_rx_param[RX_MAX_PARAM];
+volatile uint8_t g_tx_pkt[TX_MAX_LENGTH];
+volatile uint8_t g_tx_pkt_len = 0;
 volatile uint8_t g_tx_pkt_readpos = 0;
 volatile uint8_t g_last_byte = 0;
+
+volatile uint16_t g_tgt_vel[2];
+volatile uint16_t g_cur_vel[2];
+volatile uint8_t g_motor_enabled[2];
+volatile uint32_t g_motor_pos[2];
 
 // this assumes that g_tx_pkt and g_tx_pkt_len have been stuffed
 void send_packet(uint8_t tx_data_len)
@@ -43,7 +54,7 @@ void send_packet(uint8_t tx_data_len)
     checksum += g_tx_pkt[i];
   g_tx_pkt[g_tx_pkt_len-1] = ~checksum;
   _delay_us(TX_EXTRA_DELAY_US);
-  PORTF.OUTSET = PIN4_bm; // assert bus
+  PORTF.OUTSET = PIN4_bm | PIN5_bm; // assert bus and disable receiver
   _delay_us(1); // wait another bit length for bus to settle (?)
   g_tx_pkt_readpos = 1;
   USARTF0.CTRLA = USART_TXCINTLVL_LO_gc; // turn on TXC, turn off RXC
@@ -97,6 +108,7 @@ void process_byte(uint8_t b)
       {
         g_rx_instruction = b;
         g_rx_checksum += b;
+        g_rx_param_writepos = 0;
         if (g_rx_length > 2)
           g_rx_state = RX_STATE_PARAMETER;
         else
@@ -109,7 +121,7 @@ void process_byte(uint8_t b)
       g_rx_checksum += b;
       if (g_rx_param_writepos < RX_MAX_PARAM)
         g_rx_param[g_rx_param_writepos++] = b;
-      if (g_rx_param_writepos >= g_rx_length + 2)
+      if (g_rx_param_writepos >= g_rx_length - 2)
         g_rx_state = RX_STATE_CHECKSUM;
       break;
     case RX_STATE_CHECKSUM:
@@ -117,20 +129,99 @@ void process_byte(uint8_t b)
       g_rx_checksum = ~g_rx_checksum;
       if (b == g_rx_checksum)
       {
-        if (g_rx_id == MY_ID)
+        if (g_rx_id == MY_ID || g_rx_id == 0xfe) // hey! we've got mail!
         {
-          // successful packet receipt
-          PORTF.OUTTGL = PIN7_bm;
-          // do something productive here
           if (g_rx_instruction == 0x01)
             send_packet(0); // respond to ping
           else if (g_rx_instruction == 0x02)
           {
             // read data
+            uint8_t read_addr = g_rx_param[0];
+            uint8_t read_len = g_rx_param[1];
+            if (read_addr == 0x24 && read_len == 8) // return motor positions
+            {
+              g_tx_pkt[TX_DATA_START  ] = *((uint8_t *)(&g_motor_pos[0])  );
+              g_tx_pkt[TX_DATA_START+1] = *((uint8_t *)(&g_motor_pos[0])+1);
+              g_tx_pkt[TX_DATA_START+2] = *((uint8_t *)(&g_motor_pos[0])+2);
+              g_tx_pkt[TX_DATA_START+3] = *((uint8_t *)(&g_motor_pos[0])+3);
+              g_tx_pkt[TX_DATA_START+4] = *((uint8_t *)(&g_motor_pos[1])  );
+              g_tx_pkt[TX_DATA_START+5] = *((uint8_t *)(&g_motor_pos[1])+1);
+              g_tx_pkt[TX_DATA_START+6] = *((uint8_t *)(&g_motor_pos[1])+2);
+              g_tx_pkt[TX_DATA_START+7] = *((uint8_t *)(&g_motor_pos[1])+3);
+              send_packet(8);
+            }
           }
           else if (g_rx_instruction == 0x03)
           {
-            // write data
+            if (g_rx_length == 7) // 32-bit write
+            {
+              const uint16_t val_1 = ((uint16_t)g_rx_param[1]) | ((uint16_t)(g_rx_param[2]&0x7f) << 8);
+              const uint16_t val_2 = ((uint16_t)g_rx_param[3]) | ((uint16_t)(g_rx_param[4]&0x7f) << 8);
+              if (g_rx_param[0] == 0x20) // target velocity (dynamixel "moving speed")
+              {
+                g_tgt_vel[0] = val_1;
+                g_tgt_vel[1] = val_2;
+                if (val_1 > 0) // set (or retain) timer clock
+                {
+                  TCC0.CTRLA = TC_CLKSEL_DIV64_gc;
+                  if (val_1 > MIN_TIMER_TOP)
+                    TCC0.CCABUF = val_1;
+                  else
+                    TCC0.CCABUF = MIN_TIMER_TOP;
+                }
+                else // stop timer clock
+                  TCC0.CTRLA = TC_CLKSEL_OFF_gc;
+
+                if (val_2 > 0) // set (or retain) timer clock
+                {
+                  TCE0.CTRLA = TC_CLKSEL_DIV64_gc;
+                  if (val_2 > MIN_TIMER_TOP)
+                    TCE0.CCABUF = val_2;
+                  else
+                    TCE0.CCABUF = MIN_TIMER_TOP;
+                }
+                else // stop timer clock
+                  TCE0.CTRLA = TC_CLKSEL_OFF_gc;
+
+                if (g_rx_param[2] & 0x80)
+                  PORTC.OUTSET = PIN2_bm;
+                else
+                  PORTC.OUTCLR = PIN2_bm;
+
+                if (g_rx_param[4] & 0x80)
+                  PORTE.OUTSET = PIN1_bm;
+                else
+                  PORTE.OUTCLR = PIN1_bm;
+              }
+            }
+            else if (g_rx_length == 5) // 16-bit write
+            {
+              const uint8_t val_1 = g_rx_param[1], val_2 = g_rx_param[2];
+              if (g_rx_param[0] == 0x18) // torque on/off
+              {
+                g_motor_enabled[0] = val_1;
+                g_motor_enabled[1] = val_2;
+                if (g_motor_enabled[0])
+                  PORTC.OUTSET = PIN1_bm;
+                else
+                  PORTC.OUTCLR = PIN1_bm;
+                if (g_motor_enabled[1])
+                  PORTE.OUTSET = PIN2_bm;
+                else
+                  PORTE.OUTCLR = PIN2_bm;
+              }
+            }
+            else if (g_rx_length == 4) // 8-bit write
+            {
+              const uint8_t val = g_rx_param[1];
+              if (g_rx_param[0] == 0x19) // LED on/off
+              {
+                if (val)
+                  PORTF.OUTSET = PIN7_bm;
+                else
+                  PORTF.OUTCLR = PIN7_bm;
+              }
+            }
           }
           else if (g_rx_instruction == 0x06)
           {
@@ -165,41 +256,79 @@ ISR(USARTF0_TXC_vect)
     USARTF0.CTRLA = USART_RXCINTLVL_LO_gc; // turn off the TXC interrupt
     // de-assert the bus after we hold it for one extra bit
     _delay_us(1);
-    PORTF.OUTCLR = PIN4_bm; // release bus
+    PORTF.OUTCLR = PIN4_bm | PIN5_bm; // release bus and re-enable receiver
   }
 }
 
-int main(void)
+// harrr count yer steps
+ISR(TCC0_CCA_vect)
 {
-  OSC.CTRL |= OSC_RC32MEN_bm;
-  while (!(OSC.STATUS & OSC_RC32MRDY_bm)) { } // spin until we settle
-  CCP = CCP_IOREG_gc;
-  CLK.CTRL = 0x01;
+  if (PORTC.IN & 0x04)
+    g_motor_pos[0]++;
+  else
+    g_motor_pos[0]--;
+}
+
+ISR(TCE0_CCA_vect)
+{
+  if (PORTE.IN & 0x02)
+    g_motor_pos[1]++;
+  else
+    g_motor_pos[1]--;
+}
+
+void uart_init()
+{
+  int bsel = 64; // 1 megabit @ 32mhz clock
+  uint8_t bscale = 10;
+
   PORTF.DIRSET = PIN3_bm | PIN4_bm | PIN5_bm | PIN7_bm; // rs-485 and led
   PORTF.OUTSET = PIN3_bm | PIN7_bm;
   PORTF.OUTCLR = PIN4_bm; // make sure bus is released
-
-  int bsel = 64; // 1 megabit @ 32mhz clock
-  uint8_t bscale = 10;
 
   USARTF0.BAUDCTRLA = (uint8_t)bsel;
   USARTF0.BAUDCTRLB = (bscale << 4) | (bsel >> 8);
   USARTF0.CTRLA = USART_RXCINTLVL_LO_gc; // rx fires a low-level interrupt
   USARTF0.CTRLB = USART_TXEN_bm | USART_RXEN_bm;
   USARTF0.CTRLC = USART_CHSIZE_8BIT_gc;
+}
 
-  PMIC.CTRL |= PMIC_LOLVLEN_bm; // enable low-level interrupts
+int main(void)
+{
+  uint8_t i;
+
+  OSC.CTRL |= OSC_RC32MEN_bm;
+  while (!(OSC.STATUS & OSC_RC32MRDY_bm)) { } // spin until we settle
+  CCP = CCP_IOREG_gc;
+  CLK.CTRL = 0x01;
+
+  PORTC.DIRSET = PIN0_bm | PIN1_bm | PIN2_bm;
+  PORTE.DIRSET = PIN0_bm | PIN1_bm | PIN2_bm;
+
+  TCC0.CTRLA = TC_CLKSEL_OFF_gc;
+  TCE0.CTRLA = TC_CLKSEL_OFF_gc;
+
+  TCC0.CTRLB = TC_WGMODE_FRQ_gc | TC0_CCAEN_bm;
+  TCE0.CTRLB = TC_WGMODE_FRQ_gc | TC0_CCAEN_bm;
+
+  TCC0.INTCTRLB = TC_CCAINTLVL_MED_gc;
+  TCE0.INTCTRLB = TC_CCAINTLVL_MED_gc;
+
+  for (i = 0; i < 2; i++)
+  {
+    g_tgt_vel[i] = 0;
+    g_cur_vel[i] = 0;
+    g_motor_enabled[i] = 0;
+    g_motor_pos[i] = 0;
+  }
+
+  uart_init();
+
+  PMIC.CTRL |= PMIC_MEDLVLEN_bm | PMIC_LOLVLEN_bm; // enable low-level interrupts
   sei();
 
   while(1)
   {
-/*
-    PORTF.OUTSET = PIN4_bm; // assert bus
-    _delay_ms(1);
-    USARTF0.DATA = 'h';
-    _delay_ms(10);
-    PORTF.OUTCLR = PIN4_bm; // release bus
-*/
   }
   return 0; // or not
 }  
