@@ -40,6 +40,9 @@ volatile uint16_t g_cur_vel[2];
 volatile uint8_t g_motor_enabled[2];
 volatile uint32_t g_motor_pos[2];
 
+volatile uint8_t g_accel_data[2][8];
+volatile uint8_t g_accel_write_slot = 0;
+
 // this assumes that g_tx_pkt and g_tx_pkt_len have been stuffed
 void send_packet(uint8_t tx_data_len)
 {
@@ -148,6 +151,14 @@ void process_byte(uint8_t b)
               g_tx_pkt[TX_DATA_START+5] = *((uint8_t *)(&g_motor_pos[1])+1);
               g_tx_pkt[TX_DATA_START+6] = *((uint8_t *)(&g_motor_pos[1])+2);
               g_tx_pkt[TX_DATA_START+7] = *((uint8_t *)(&g_motor_pos[1])+3);
+              send_packet(8);
+            }
+            else if (read_addr == 0x2b && read_len == 8) // return accelerometer data
+            {
+              uint8_t i;
+              volatile uint8_t read_slot = g_accel_write_slot ? 0 : 1;
+              for (i = 0; i < 8; i++)
+                g_tx_pkt[TX_DATA_START+i] = g_accel_data[read_slot][i];
               send_packet(8);
             }
           }
@@ -293,6 +304,26 @@ void uart_init()
   USARTF0.CTRLC = USART_CHSIZE_8BIT_gc;
 }
 
+void poll_accel()
+{
+  uint8_t reg_offset = 0;
+  PORTD.OUTCLR = PIN4_bm;
+  _delay_us(1);
+  SPID.DATA = 0x81; // start reading register 1
+  while (!(SPID.STATUS & SPI_IF_bm)) { }
+  SPID.DATA = 0x00; // dummy
+  for (reg_offset = 0; reg_offset < 8; reg_offset++)
+  {
+    while (!(SPID.STATUS & SPI_IF_bm)) { }
+    g_accel_data[g_accel_write_slot][reg_offset] = SPID.DATA;
+    if (reg_offset < 7)
+      SPID.DATA = 0x00; // dummy
+  }
+  g_accel_write_slot = g_accel_write_slot ? 0 : 1;
+  _delay_us(1);
+  PORTD.OUTSET = PIN4_bm;
+}
+
 int main(void)
 {
   uint8_t i;
@@ -325,10 +356,17 @@ int main(void)
   uart_init();
 
   PMIC.CTRL |= PMIC_MEDLVLEN_bm | PMIC_LOLVLEN_bm; // enable low-level interrupts
+
+  PORTD.DIRSET = PIN4_bm | PIN5_bm | PIN7_bm;
+  PORTD.OUTSET = PIN4_bm | PIN7_bm;
+  SPID.CTRL = SPI_ENABLE_bm | SPI_MODE0_bm | SPI_MODE1_bm | SPI_MASTER_bm | SPI_PRESCALER0_bm;
+
   sei();
 
   while(1)
   {
+    _delay_ms(100);
+    poll_accel();
   }
   return 0; // or not
 }  
