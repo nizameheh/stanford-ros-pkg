@@ -15,7 +15,7 @@
 
 LightweightSerial *g_serial = NULL; 
 const size_t NUM_MOTORS = 3;
-enum rx_state_t { STEPPER_POS, SERVO_POS } g_rx_state;
+enum rx_state_t { PING, STEPPER_POS, SERVO_POS, ACCELEROMETER } g_rx_state;
 // the servos are assumed to be programmed as 0,1,..,NUM_MOTORS
 
 bool process_byte(uint8_t b) //, ros::Publisher *pub)
@@ -99,6 +99,15 @@ bool process_byte(uint8_t b) //, ros::Publisher *pub)
           uint16_t pos = pkt[0] + (uint16_t)(pkt[1] << 8);
           printf("%d: %5d\n", servo_id, pos);
         }
+        else if (g_rx_state == ACCELEROMETER)
+        {
+          for (int i = 0; i < 8; i++)
+            printf("  %x ", pkt[i]);
+          printf("\n");
+        }
+        else if (g_rx_state == PING)
+        {
+        }
         /*
         //printf("packet ok\n");
         //printf("%d byte packet\n", expected_len);
@@ -180,6 +189,7 @@ void query_motor(uint8_t id)
   pkt[5] = 0x24; // present position
   pkt[6] = 2; // read LSB and MSB
   pkt[7] = calc_checksum(pkt, 7);
+  g_rx_state = SERVO_POS;
   g_serial->write_block(pkt, 8);
 }
 
@@ -192,8 +202,24 @@ void query_stepper_positions(uint8_t id)
   pkt[3] = 4; // 2 parameters + 2
   pkt[4] = 0x02; // "read data"
   pkt[5] = 0x24; // present position
-  pkt[6] = 8; // read LSB and MSB
+  pkt[6] = 8; // 32 bits from both steppers
   pkt[7] = calc_checksum(pkt, 7);
+  g_rx_state = STEPPER_POS;
+  g_serial->write_block(pkt, 8);
+}
+
+void query_accelerometer(uint8_t id)
+{
+  uint8_t pkt[20];
+  pkt[0] = 0xff;
+  pkt[1] = 0xff;
+  pkt[2] = id;
+  pkt[3] = 4; // 2 parameters + 2
+  pkt[4] = 0x02; // "read data"
+  pkt[5] = 0x2b; // "temperature" aka accelerometer
+  pkt[6] = 8; // 8 bytes for now (version, X, Y, Z, temperature)
+  pkt[7] = calc_checksum(pkt, 7);
+  g_rx_state = ACCELEROMETER;
   g_serial->write_block(pkt, 8);
 }
 
@@ -207,6 +233,7 @@ void ping_motor(uint8_t id)
   pkt[4] = 0x01; // ping instruction
   pkt[5] = calc_checksum(pkt, 5);
   printf("pinging motor %d, checksum %x\n", id, pkt[5]);
+  g_rx_state = PING;
   g_serial->write_block(pkt, 6);
 }
 
@@ -228,6 +255,7 @@ void wrist_torques_cb(const openarms::ArmActuators::ConstPtr &msg)
   }
 }
 */
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "armbus");
@@ -248,6 +276,12 @@ int main(int argc, char **argv)
   //enable_motors(1);
   
   bool even = false;
+  uint32_t scheduled = 0;
+  bool replied = false;
+  const uint32_t SCH_BEGIN           = 0;
+  const uint32_t SCH_STEPPER_POS_0   = 0;
+  const uint32_t SCH_STEPPER_ACCEL_0 = 1;
+  const uint32_t SCH_END             = 1;
   while (n.ok())
   {
     uint8_t read_buf[60];
@@ -258,7 +292,10 @@ int main(int argc, char **argv)
       {
         //printf("    %x\n", read_buf[i]);
         if (process_byte(read_buf[i])) //, &pub))
+        {
+          replied = true;
           ros::spinOnce();
+        }
       }
     }
     else
@@ -266,18 +303,24 @@ int main(int argc, char **argv)
     ros::spinOnce();
     // blast status-request packets periodically
     ros::Time t = ros::Time::now();
-    if ((t - t_prev).toSec() > 0.01)
+    if ((t - t_prev).toSec() > 0.1 || replied)
     {
+      replied = false;
       enable_led(10, even ? 1 : 0);
       even = !even;
       send_stepper_vel(10, 0x10, 0xffff);
-      query_stepper_positions(10);
+      if (scheduled == SCH_STEPPER_POS_0)
+        query_stepper_positions(10);
+      else if (scheduled == SCH_STEPPER_ACCEL_0)
+        query_accelerometer(10);
+      if (++scheduled > SCH_END)
+        scheduled = SCH_BEGIN;
+      t_prev = t;
+
 #if 0
       for (size_t i = 0; i < 1 /*NUM_MOTORS*/; i++)
         query_motor(i);
 #endif
-      //ping_motor(10);
-      t_prev = t;
     }
   }
   //enable_motors(0); // turn em off
