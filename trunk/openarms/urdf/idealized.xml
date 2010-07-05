@@ -1,0 +1,159 @@
+<?xml version="1.0" ?>
+<robot name="idealized">
+  <link name="torso_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 -.20"/>
+      <geometry>
+        <box size = ".355 0.178 .558"/>
+      </geometry>
+      <material name="Tan">
+        <color rgba="0.6 0.3 0.2 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="shoulder_flexion_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 .228" rpy="0 0 0"/>
+      <geometry>
+        <box size=".1 .1 .1"/>
+      </geometry>
+      <material name="Green"> 
+        <color rgba="0.0 1.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="shoulder_abduction_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz=".06 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size=".2 .09 .09"/>
+      </geometry>
+      <material name="Yellow">
+        <color rgba="1.0 1.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="humeral_rotation_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 0.28" rpy="0 0 0"/>
+      <geometry>
+        <box size=".08 .08 .25"/>
+      </geometry>
+      <material name="Cyan">
+        <color rgba="0.0 1.0 1.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="elbow_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz=".07 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.15 .07 .07"/>
+      </geometry>
+      <material name="Magenta">
+        <color rgba="1.0 0.0 1.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="forearm_roll_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 .25" rpy="0 0 0"/>
+      <geometry>
+        <box size=".06 .06 .21"/>
+      </geometry>
+      <material name="Blue">
+        <color rgba="0.0 0.0 1.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="wrist_pitch_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.07 .04 .07"/>
+      </geometry>
+      <material name="Red">
+        <color rgba="1.0 0.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="wrist_roll_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 0.04" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.04 .04 .08"/>
+      </geometry>
+      <material name="Green">
+        <color rgba="0.0 1.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="tool_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 -.025" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.01 .01 .05"/>
+      </geometry>
+      <material name="Magenta">
+        <color rgba="1.0 1.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="shoulder_flexion" type="continuous">
+    <parent link="torso_link"/>
+    <child link="shoulder_flexion_link"/>
+    <origin xyz="0 0 0" rpy="0 1.57 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="shoulder_abduction" type="continuous">
+    <parent link="shoulder_flexion_link"/>
+    <child link="shoulder_abduction_link"/>
+    <origin xyz="0 0 0.278" rpy="-1.57 -0.3 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="humeral_rotation" type="continuous">
+    <parent link="shoulder_abduction_link"/>
+    <child link="humeral_rotation_link"/>
+    <origin xyz="0 0 0" rpy="3.14 -1.57 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="elbow" type="continuous">
+    <parent link="humeral_rotation_link"/>
+    <child link="elbow_link"/>
+    <origin xyz="0 0 .40" rpy="-1.57 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="forearm_roll" type="continuous">
+    <parent link="elbow_link"/>
+    <child link="forearm_roll_link"/>
+    <origin xyz="0 0 0" rpy="0 1.57 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="wrist_pitch" type="continuous">
+    <parent link="forearm_roll_link"/>
+    <child link="wrist_pitch_link"/>
+    <origin xyz="0 0 0.37" rpy="-1.57 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="wrist_roll" type="continuous">
+    <parent link="wrist_pitch_link"/>
+    <child link="wrist_roll_link"/>
+    <origin xyz="0 0 0" rpy="1.57 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="tool" type="fixed">
+    <parent link="wrist_roll_link"/>
+    <child link="tool_link"/>
+    <origin xyz="0 0 .1" rpy="0 0 0"/>
+  </joint>
+</robot>
+
