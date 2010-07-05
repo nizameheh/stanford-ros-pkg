@@ -1,0 +1,5 @@
+<launch>
+  <param name="robot_description" textfile="$(find openarms)/urdf/idealized.xml"/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+  <!--<node name="rviz" pkg="rviz" type="rviz"/>-->
+</launch>
