@@ -92,7 +92,7 @@ bool process_byte(uint8_t b) //, ros::Publisher *pub)
                            (uint32_t)(pkt[5] << 8)  +
                            (uint32_t)(pkt[6] << 16) +
                            (uint32_t)(pkt[7] << 24);
-          //printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
+          printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
         }
         else if (g_rx_state == SERVO_POS)
         {
@@ -101,9 +101,11 @@ bool process_byte(uint8_t b) //, ros::Publisher *pub)
         }
         else if (g_rx_state == ACCELEROMETER)
         {
+/*
           for (int i = 0; i < 8; i++)
             printf("  %x ", pkt[i]);
           printf("\n");
+*/
         }
         else if (g_rx_state == PING)
         {
@@ -169,6 +171,14 @@ void enable_motors(uint8_t enable)
 {
   uint8_t data = (enable ? 1 : 0);
   write_data(0xfe, 0x18, 1, &data);
+}
+
+void enable_motor(uint8_t id, uint8_t enable)
+{
+  uint8_t data[2];
+  for (int i = 0; i < 2;i ++)
+    data[i]  = (enable ? 1 : 0);
+  write_data(id, 0x18, 2, data);
 }
 
 void enable_led(uint8_t id, uint8_t enable)
@@ -273,7 +283,7 @@ int main(int argc, char **argv)
   //ros::Subscriber sub = n.subscribe("wrist_torques", 1, wrist_torques_cb);
   ros::Time t_prev = ros::Time::now();
   //ros::spin();
-  //enable_motors(1);
+  enable_motor(11, 1);
   
   bool even = false;
   uint32_t scheduled = 0;
@@ -303,16 +313,17 @@ int main(int argc, char **argv)
     ros::spinOnce();
     // blast status-request packets periodically
     ros::Time t = ros::Time::now();
-    if ((t - t_prev).toSec() > 0.1 || replied)
+    if ((t - t_prev).toSec() > 0.1 || 
+        ((t - t_prev).toSec() > 0.01 && replied))
     {
       replied = false;
-      enable_led(10, even ? 1 : 0);
+      enable_led(11, even ? 1 : 0);
       even = !even;
-      send_stepper_vel(10, 0x10, 0xffff);
+      send_stepper_vel(11, 0x7fff, 0x7fff);
       if (scheduled == SCH_STEPPER_POS_0)
-        query_stepper_positions(10);
+        query_stepper_positions(11);
       else if (scheduled == SCH_STEPPER_ACCEL_0)
-        query_accelerometer(10);
+        query_accelerometer(11);
       if (++scheduled > SCH_END)
         scheduled = SCH_BEGIN;
       t_prev = t;
@@ -323,7 +334,7 @@ int main(int argc, char **argv)
 #endif
     }
   }
-  //enable_motors(0); // turn em off
+  enable_motor(11, 0); // turn em off
   delete s;
   return 0;
 }
