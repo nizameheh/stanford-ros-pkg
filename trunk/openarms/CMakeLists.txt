@@ -84,6 +84,8 @@ rosbuild_add_executable(oa-state state/oa-state.cpp)
 rosbuild_add_executable(wiimote_master master/wiimote_master.cpp)
 rosbuild_add_executable(ik_test ik/ik_test.cpp)
 rosbuild_add_executable(master_keyboard master/master_keyboard.cpp)
+rosbuild_add_executable(master_gamepad master/master_gamepad.cpp)
+rosbuild_add_executable(goto_cart control/goto_cart.cpp)
 #rosbuild_add_executable(laser-tilter drivers/laser-tilter.cpp)
 #rosbuild_add_executable(wrist-torques drivers/wrist-torques.cpp)
 
