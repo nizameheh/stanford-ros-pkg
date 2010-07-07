@@ -15,10 +15,12 @@
 
 LightweightSerial *g_serial = NULL; 
 const size_t NUM_MOTORS = 3;
-enum rx_state_t { PING, STEPPER_POS, SERVO_POS, ACCELEROMETER } g_rx_state;
+enum rx_state_t { PING, STEPPER_POS_0, STEPPER_POS_1, STEPPER_ACCEL_1, 
+                  SERVO_POS_0, SERVO_POS_1, SERVO_POS_2} g_rx_state;
 // the servos are assumed to be programmed as 0,1,..,NUM_MOTORS
+openarms::ArmSensors sensors_msg;
 
-bool process_byte(uint8_t b) //, ros::Publisher *pub)
+bool process_byte(uint8_t b, ros::Publisher *pub)
 {
   static uint8_t pkt[256], servo_id = 0, s_err = 0;
   static uint8_t write_pos = 0, expected_len = 0;
@@ -82,7 +84,8 @@ bool process_byte(uint8_t b) //, ros::Publisher *pub)
       if (local_csum == b)
       {
         //printf("packet from %d\n", servo_id);
-        if (g_rx_state == STEPPER_POS && expected_len == 8+2)
+        if ((g_rx_state == STEPPER_POS_0 || g_rx_state == STEPPER_POS_1)
+            && expected_len == 8+2)
         {
           uint32_t pos_0 = (uint32_t) pkt[0]        + 
                            (uint32_t)(pkt[1] << 8)  +
@@ -92,14 +95,36 @@ bool process_byte(uint8_t b) //, ros::Publisher *pub)
                            (uint32_t)(pkt[5] << 8)  +
                            (uint32_t)(pkt[6] << 16) +
                            (uint32_t)(pkt[7] << 24);
-          printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
+          //printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
+          if (g_rx_state == STEPPER_POS_0)
+          {
+            sensors_msg.pos[0] = pos_0;
+            sensors_msg.pos[1] = pos_1;
+            pub->publish(sensors_msg);
+          }
+          else
+          {
+            sensors_msg.pos[2] = pos_0;
+            sensors_msg.pos[3] = pos_1;
+            printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
+          }
+          return true;
         }
-        else if (g_rx_state == SERVO_POS)
+        else if (g_rx_state == SERVO_POS_0 ||
+                 g_rx_state == SERVO_POS_1 ||
+                 g_rx_state == SERVO_POS_2)
         {
           uint16_t pos = pkt[0] + (uint16_t)(pkt[1] << 8);
-          printf("%d: %5d\n", servo_id, pos);
+          if (g_rx_state == SERVO_POS_0)
+            sensors_msg.pos[4] = pos;
+          else if (g_rx_state == SERVO_POS_1)
+            sensors_msg.pos[5] = pos;
+          else if (g_rx_state == SERVO_POS_2)
+            sensors_msg.pos[6] = pos;
+          //printf("%d: %5d\n", servo_id, pos);
+          return true;
         }
-        else if (g_rx_state == ACCELEROMETER)
+        else if (g_rx_state == STEPPER_ACCEL_1)
         {
 /*
           for (int i = 0; i < 8; i++)
@@ -115,7 +140,7 @@ bool process_byte(uint8_t b) //, ros::Publisher *pub)
         //printf("%d byte packet\n", expected_len);
         //pub->publish(msg);
         */
-        return true;
+        return false; // no need to transmit
       }
       else
         printf("checksum fail: local sum=%x wire sum=%x\n", local_csum, b);
@@ -199,7 +224,17 @@ void query_motor(uint8_t id)
   pkt[5] = 0x24; // present position
   pkt[6] = 2; // read LSB and MSB
   pkt[7] = calc_checksum(pkt, 7);
-  g_rx_state = SERVO_POS;
+  if (id == 0)
+    g_rx_state = SERVO_POS_0;
+  else if (id == 1)
+    g_rx_state = SERVO_POS_1;
+  else if (id == 2)
+    g_rx_state = SERVO_POS_2;
+  else
+  {
+    ROS_INFO("woah there. servo id must be in {0,1,2}");
+    return;
+  }
   g_serial->write_block(pkt, 8);
 }
 
@@ -214,7 +249,15 @@ void query_stepper_positions(uint8_t id)
   pkt[5] = 0x24; // present position
   pkt[6] = 8; // 32 bits from both steppers
   pkt[7] = calc_checksum(pkt, 7);
-  g_rx_state = STEPPER_POS;
+  if (id == 11)
+    g_rx_state = STEPPER_POS_0;
+  else if (id == 10)
+    g_rx_state = STEPPER_POS_1;
+  else
+  {
+    ROS_INFO("woah. stepper id must be 11 or 10");
+    return;
+  }
   g_serial->write_block(pkt, 8);
 }
 
@@ -229,7 +272,12 @@ void query_accelerometer(uint8_t id)
   pkt[5] = 0x2b; // "temperature" aka accelerometer
   pkt[6] = 8; // 8 bytes for now (version, X, Y, Z, temperature)
   pkt[7] = calc_checksum(pkt, 7);
-  g_rx_state = ACCELEROMETER;
+  if (id != 0x10)
+  {
+    ROS_INFO("woah. only stepper id 10 has an accelerometer");
+    return;
+  }
+  g_rx_state = STEPPER_ACCEL_1;
   g_serial->write_block(pkt, 8);
 }
 
@@ -245,6 +293,53 @@ void ping_motor(uint8_t id)
   printf("pinging motor %d, checksum %x\n", id, pkt[5]);
   g_rx_state = PING;
   g_serial->write_block(pkt, 6);
+}
+
+void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
+{
+  if (msg->stepper_vel.size() != 4)
+  {
+    ROS_INFO("ahhh was expecting 4 stepper velocities");
+    return;
+  }
+  if (msg->servo_torque.size() != 3)
+  {
+    ROS_INFO("ahhh was expecting 3 servo torques");
+    return;
+  }
+  // convert stepper velocities to xmega timer values
+  // 32mhz system clock / 64 = 500khz timer clock
+  uint16_t stepper_timers[4];
+  for (int i = 0; i < 4; i++)
+  {
+    if (msg->stepper_vel[i] == 0)
+      stepper_timers[i] = 0;
+    else
+    {
+      uint32_t t = 500000 / abs(msg->stepper_vel[i]);
+      if (t > 0x7fff)
+        t = 0x7fff;
+      if (t < 100)
+        t = 100; // don't thrash the mcu with interrupts...
+      stepper_timers[i] = t;
+      if (msg->stepper_vel[i] < 0)
+        stepper_timers[i] |= 0x8000; // high bit = direction
+    }
+  }
+  send_stepper_vel(11, stepper_timers[0], stepper_timers[1]);
+  send_stepper_vel(10, stepper_timers[3], stepper_timers[2]);
+
+  for (int i = 0; i < 3; i++)
+  {
+    uint16_t torque = abs(msg->servo_torque[i]);
+    if (torque > 1023)
+      torque = 1023;
+    send_torque(i, torque, (msg->servo_torque[i] > 0));
+  }
+  /*
+  printf("%6x %6x %6x %6x\n", stepper_timers[0], stepper_timers[1],
+         stepper_timers[2], stepper_timers[3]);
+  */
 }
 
 /*
@@ -280,18 +375,24 @@ int main(int argc, char **argv)
     ROS_BREAK();
   }
   g_serial = s;
-  //ros::Subscriber sub = n.subscribe("wrist_torques", 1, wrist_torques_cb);
+  ros::Subscriber sub = n.subscribe("arm_actuators", 1, actuators_cb);
+  ros::Publisher pub = n.advertise<openarms::ArmSensors>("arm_sensors",1);
   ros::Time t_prev = ros::Time::now();
   //ros::spin();
-  enable_motor(11, 1);
+  sensors_msg.pos.resize(7);
+  send_stepper_vel(10, 0, 0); // stop em
+  send_stepper_vel(11, 0, 0); // stop em
+  enable_motor(10, 1); // power em up
+  enable_motor(11, 1); // power em up
   
   bool even = false;
   uint32_t scheduled = 0;
   bool replied = false;
   const uint32_t SCH_BEGIN           = 0;
   const uint32_t SCH_STEPPER_POS_0   = 0;
-  const uint32_t SCH_STEPPER_ACCEL_0 = 1;
-  const uint32_t SCH_END             = 1;
+  const uint32_t SCH_STEPPER_POS_1   = 1;
+  const uint32_t SCH_STEPPER_ACCEL_1 = 2;
+  const uint32_t SCH_END             = 2; // only query first guy for now
   while (n.ok())
   {
     uint8_t read_buf[60];
@@ -301,7 +402,7 @@ int main(int argc, char **argv)
       for (int i = 0; i < nread; i++)
       {
         //printf("    %x\n", read_buf[i]);
-        if (process_byte(read_buf[i])) //, &pub))
+        if (process_byte(read_buf[i], &pub))
         {
           replied = true;
           ros::spinOnce();
@@ -314,16 +415,20 @@ int main(int argc, char **argv)
     // blast status-request packets periodically
     ros::Time t = ros::Time::now();
     if ((t - t_prev).toSec() > 0.1 || 
-        ((t - t_prev).toSec() > 0.01 && replied))
+        ((t - t_prev).toSec() > 0.05 && replied))
     {
       replied = false;
       enable_led(11, even ? 1 : 0);
       even = !even;
-      send_stepper_vel(11, 0x7fff, 0x7fff);
+      //send_stepper_vel(11, 0x7fff, 0x7fff);
       if (scheduled == SCH_STEPPER_POS_0)
         query_stepper_positions(11);
-      else if (scheduled == SCH_STEPPER_ACCEL_0)
+      else if (scheduled == SCH_STEPPER_POS_1)
+        query_stepper_positions(10);
+      /*
+      else if (scheduled == SCH_STEPPER_POS_1)
         query_accelerometer(11);
+        */
       if (++scheduled > SCH_END)
         scheduled = SCH_BEGIN;
       t_prev = t;
@@ -334,6 +439,7 @@ int main(int argc, char **argv)
 #endif
     }
   }
+  enable_motor(10, 0); // turn em off
   enable_motor(11, 0); // turn em off
   delete s;
   return 0;
