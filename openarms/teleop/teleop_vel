@@ -8,33 +8,52 @@ from openarms.msg import ArmActuators
 
 g_stepper_vel = [0,0,0,0]
 g_servo_torque = [0,0,0]
+g_autopilot = False
+g_autopilot_act = None
 
 if __name__ == '__main__':
   def joy_update_0(msg):
     global g_stepper_vel
-    if len(msg.axes) >= 3:
-      g_stepper_vel[0] = msg.axes[0] * 2000.0
-      g_stepper_vel[1] = msg.axes[1] * 2000.0
-      g_stepper_vel[2] = msg.axes[2] * 8000.0
+    global g_autopilot
+    if len(msg.buttons) >= 1:
+      g_autopilot = bool(msg.buttons[0])
+    if not g_autopilot:
+      if len(msg.axes) >= 3:
+        g_stepper_vel[0] = msg.axes[0] * 2000.0
+        g_stepper_vel[1] = msg.axes[1] * 2000.0
+        g_stepper_vel[2] = msg.axes[2] * 8000.0
 
   def joy_update_1(msg):
-    global g_stepper_vel 
+    global g_stepper_vel
     global g_servo_torque
-    if len(msg.axes) >= 3:
-      g_stepper_vel[3] = msg.axes[0] * 8000.0
-      g_servo_torque[0] = msg.axes[1] * 1023.0
-      g_servo_torque[1] = msg.axes[2] * 1023.0
+    global g_autopilot
+    if not g_autopilot:
+      if len(msg.axes) >= 3:
+        g_stepper_vel[3] = msg.axes[0] * 8000.0
+        g_servo_torque[0] = msg.axes[1] * 1023.0
+        g_servo_torque[1] = msg.axes[2] * 1023.0
+
+  def act_cb(msg):
+    global g_autopilot_act
+    g_autopilot_act = msg
 
   pub_act = rospy.Publisher('arm_actuators', ArmActuators)
   sub_0 = rospy.Subscriber('joy_0', Joy, joy_update_0)
   sub_1 = rospy.Subscriber('joy_1', Joy, joy_update_1)
+  sub_act = rospy.Subscriber('arm_actuators_autopilot', ArmActuators, act_cb)
   rospy.init_node('teleop_vel')
   r = rospy.Rate(100)
+  g_autopilot_act = ArmActuators()
+  g_autopilot_act.stepper_vel = [0,0,0,0]
+  g_autopilot_act.servo_torque = [0,0,0]
   #joint_tgt = JointState()
   act = ArmActuators()
   while not rospy.is_shutdown():
-    act.stepper_vel = g_stepper_vel
-    act.servo_torque = g_servo_torque
-    pub_act.publish(act)
+    if not g_autopilot:
+      act.stepper_vel = g_stepper_vel
+      act.servo_torque = g_servo_torque
+      pub_act.publish(act)
+    else:
+      pub_act.publish(g_autopilot_act)
     r.sleep()
 

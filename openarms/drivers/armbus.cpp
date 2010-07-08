@@ -98,15 +98,15 @@ bool process_byte(uint8_t b, ros::Publisher *pub)
           //printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
           if (g_rx_state == STEPPER_POS_0)
           {
-            sensors_msg.pos[0] = pos_0;
-            sensors_msg.pos[1] = pos_1;
+            sensors_msg.pos[0] = -pos_0;
+            sensors_msg.pos[1] =  pos_1;
             pub->publish(sensors_msg);
           }
           else
           {
-            sensors_msg.pos[2] = pos_0;
-            sensors_msg.pos[3] = pos_1;
-            printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
+            sensors_msg.pos[3] = -pos_0;
+            sensors_msg.pos[2] =  pos_1;
+            //printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
           }
           return true;
         }
@@ -309,7 +309,8 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
   }
   // flip joints as needed
   openarms::ArmActuators act = *msg;
-  act.stepper_vel[0] *= -1;
+  act.stepper_vel[1] *= -1;
+  act.stepper_vel[2] *= -1;
 
   // convert stepper velocities to xmega timer values
   // 32mhz system clock / 64 = 500khz timer clock
