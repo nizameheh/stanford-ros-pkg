@@ -19,8 +19,10 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
   }
 
   // 10-microstep, 1.8 deg/step
-  g_joint_pos[0] = -(sensors->pos[0] - g_stepper_offsets[0]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 6.5; 
+  g_joint_pos[0] = (sensors->pos[0] - g_stepper_offsets[0]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 6.5; 
   g_joint_pos[1] = (sensors->pos[1] - g_stepper_offsets[1]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 10.133 + g_joint_pos[0] / 1.97; 
+  g_joint_pos[2] = (sensors->pos[2] - g_stepper_offsets[2]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 10.133; 
+  g_joint_pos[3] = (sensors->pos[3] - g_stepper_offsets[3]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 10.133;
   /*
   static int print_count = 0;
   if (print_count++ % 50 == 0)
