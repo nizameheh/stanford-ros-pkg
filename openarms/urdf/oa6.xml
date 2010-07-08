@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <robot name="oa6">
-  <link name="torso">
+  <link name="torso_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0.035 0.066" rpy="1.57 0 0"/>
@@ -8,45 +8,147 @@
         <mesh filename="package://openarms/urdf/meshes/torso.stl"/>
       </geometry>
       <material name="Red">
-        <color rgba="0.8 0.0 0.0 1.0"/>
+        <color rgba="0.7 0.0 0.0 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="shoulderpitch">
+  <link name="shoulder_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
-      <origin xyz="-.07 -0.084 0" rpy="0 0 3.14"/>
+      <origin xyz="-.07 -0.056 0.31" rpy="0 0 3.14"/>
       <geometry name="shoulderlift_mesh">
         <mesh filename="package://openarms/urdf/meshes/shoulderlift.stl"/>
       </geometry>
       <material name="Green"> 
-        <color rgba="0.0 1.0 0.0 1.0"/>
+        <color rgba="0.0 0.7 0.0 1.0"/>
       </material>
     </visual>
   </link>
-  <link name="shoulderlift">
+  <link name="upperarm_upperhalf_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
-      <origin xyz="0 0 0.2" rpy="0 0 0"/>
+      <origin xyz="0.129 -0.065 0.152" rpy="-1.57 0 3.14"/>
       <geometry>
-        <cylinder radius="0.05" length="0.4"/>
+        <mesh filename="package://openarms/urdf/meshes/upperarm-upperhalf.stl"/>
       </geometry>
-      <material name="Yellow">
-        <color rgba="1.0 1.0 0.0 1.0"/>
+      <material name="Blue">
+        <color rgba="0.3 0.3 1.0 1.0"/>
       </material>
     </visual>
   </link>
-  <joint name="shoulderpitch_joint" type="continuous">
-    <parent link="torso"/>
-    <child link="shoulderpitch"/>
-    <origin xyz="0.31 0 0" rpy="0 1.57 0"/>
+  <link name="upperarm_lowerhalf_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="-0.036 -.042 0.193" rpy="0 0 1.57"/>
+      <geometry>
+        <mesh filename="package://openarms/urdf/meshes/upperarm-lowerhalf.stl"/>
+      </geometry>
+      <material name="Yellow">
+        <color rgba="0.8 0.8 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="elbow_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0.145 0 0.033" rpy="0 1.57 0"/>
+      <geometry>
+        <mesh filename="package://openarms/urdf/meshes/elbow.stl"/>
+      </geometry>
+      <material name="Cyan">
+        <color rgba="0.0 0.8 0.8 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="lowerarm_middle_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0.0325 -0.041 0.148" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://openarms/urdf/meshes/lowerarm-middle.stl"/>
+      </geometry>
+      <material name="Magenta">
+        <color rgba="0.7 0.0 0.7 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="wrist_pitch_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="-0.061 -0.0235 -0.033" rpy="1.57 0 0"/>
+      <geometry>
+        <mesh filename="package://openarms/urdf/meshes/wrist-pitch.stl"/>
+      </geometry>
+      <material name="Red"/>
+    </visual>
+  </link>
+  <link name="wrist_roll_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 0.10" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://openarms/urdf/meshes/wrist-roll.stl"/>
+      </geometry>
+      <material name="Green"/>
+    </visual>
+  </link>
+  <link name="tool_link">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <visual>
+      <origin xyz="0 0 .025" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.05"/>
+      </geometry>
+      <material name="Blue"/>
+    </visual>
+  </link>
+
+  <joint name="shoulder1" type="continuous">
+    <parent link="torso_link"/>
+    <child link="shoulder_link"/>
+    <origin xyz="0 0 0" rpy="0 1.57 0"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <joint name="shoulderlift_joint" type="continuous">
-    <parent link="shoulderpitch"/>
-    <child link="shoulderlift"/>
-    <origin xyz="0 0 0.1" rpy="0 1.57 0"/>
+  <joint name="shoulder2" type="continuous">
+    <parent link="shoulder_link"/>
+    <child link="upperarm_upperhalf_link"/>
+    <origin xyz="-.02 0 0.3772" rpy="-1.57 0 0"/>
     <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="shoulder3" type="continuous">
+    <parent link="upperarm_upperhalf_link"/>
+    <child link="upperarm_lowerhalf_link"/>
+    <origin xyz="0 0 0.051" rpy="0 1.57 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="elbow" type="continuous">
+    <parent link="upperarm_lowerhalf_link"/>
+    <child link="elbow_link"/>
+    <origin xyz="-0.071 0 0.426" rpy="1.57 3.14 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="wrist1" type="continuous">
+    <parent link="elbow_link"/>
+    <child link="lowerarm_middle_link"/>
+    <origin xyz="0 -0.0325 -0.009" rpy="0 1.57 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="wrist2" type="continuous">
+    <parent link="lowerarm_middle_link"/>
+    <child link="wrist_pitch_link"/>
+    <origin xyz="0 0 0.330" rpy="-1.57 1.57 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="wrist3" type="continuous">
+    <parent link="wrist_pitch_link"/>
+    <child link="wrist_roll_link"/>
+    <origin xyz="0 0 -0.005" rpy="0 -1.57 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="tool" type="fixed">
+    <parent link="wrist_roll_link"/>
+    <child link="tool_link"/>
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
   </joint>
 </robot>
 
