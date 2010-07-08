@@ -36,13 +36,13 @@ std::vector<double> g_pose;
 tf::Transform fk_tool(const std::vector<double> &x) // joint angles 
 {
   map<string, double> joint_pos;
-  joint_pos.insert(make_pair("shoulder_flexion", x[0]));
-  joint_pos.insert(make_pair("shoulder_abduction", x[1]));
-  joint_pos.insert(make_pair("humeral_rotation", x[2]));
+  joint_pos.insert(make_pair("shoulder1", x[0]));
+  joint_pos.insert(make_pair("shoulder2", x[1]));
+  joint_pos.insert(make_pair("shoulder3", x[2]));
   joint_pos.insert(make_pair("elbow", x[3]));
-  joint_pos.insert(make_pair("forearm_roll", x[4]));
-  joint_pos.insert(make_pair("wrist_pitch", x[5]));
-  joint_pos.insert(make_pair("wrist_roll", x[6]));
+  joint_pos.insert(make_pair("wrist1", x[4]));
+  joint_pos.insert(make_pair("wrist2", x[5]));
+  joint_pos.insert(make_pair("wrist3", x[6]));
   map<string, KDL::Frame> link_poses;
   g_fk_solver->JntToCart(joint_pos, link_poses);
   if (link_poses.size() < 7)
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
   ///////////////////////////////////////////////////////////////////////
 
   ros::Subscriber target_sub = n.subscribe("target_frame", 1, target_cb);
-  ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("joint_states", 1);
+  ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("target_joints", 1);
   g_joint_pub = &joint_pub; // ugly ugly
   tf::TransformBroadcaster tf_broadcaster;
   g_tf_broadcaster = &tf_broadcaster;
@@ -144,13 +144,13 @@ int main(int argc, char **argv)
 
   g_js.name.resize(7);
   g_js.position.resize(7);
-  g_js.name[0] = "shoulder_flexion";
-  g_js.name[1] = "shoulder_abduction";
-  g_js.name[2] = "humeral_rotation";
+  g_js.name[0] = "shoulder1";
+  g_js.name[1] = "shoulder2`";
+  g_js.name[2] = "shoulder3";
   g_js.name[3] = "elbow";
-  g_js.name[4] = "forearm_roll";
-  g_js.name[5] = "wrist_pitch";
-  g_js.name[6] = "wrist_roll";
+  g_js.name[4] = "wrist1";
+  g_js.name[5] = "wrist2";
+  g_js.name[6] = "wrist3";
 
   KDL::TreeFkSolverPosFull_recursive fk_solver(tree);
   g_fk_solver = &fk_solver;
@@ -166,12 +166,12 @@ int main(int argc, char **argv)
 
   g_pose.resize(7);
   g_pose[0] = .3;
-  g_pose[1] = -.6;
-  g_pose[2] = -0.4;
+  g_pose[1] = -.3;
+  g_pose[2] = -.6;
   g_pose[3] = 0;
-  g_pose[4] = -0.4;
+  g_pose[4] = 0;
   g_pose[5] = 0;
-  g_pose[6] = -0.4;
+  g_pose[6] = 0;
   //tf::Transform t_tool = fk_tool(g_pose);
   //double d_pose = 0, d_pose_inc = 0.01;
 

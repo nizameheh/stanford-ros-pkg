@@ -23,7 +23,7 @@ bool set_joint_target_srv(openarms::SetJointTarget::Request &req,
 
 void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
 {
-  const double MAX_VEL = 2000;
+  const double MAX_VEL_BIGDOGS = 3000, MAX_VEL_LITTLEDOGS = 8000;
   const double MAX_ACCEL_PER_SEC = 3000;
   static ros::Time s_prev_time;
   static bool s_prev_time_init = false;
@@ -55,6 +55,7 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
           accel = -MAX_ACCEL;
         // enforce velocity limit
         g_actuators.stepper_vel[i] += accel;
+        const double MAX_VEL = (i < 2 ? MAX_VEL_BIGDOGS : MAX_VEL_LITTLEDOGS);
         if (g_actuators.stepper_vel[i] > MAX_VEL)
           g_actuators.stepper_vel[i] = MAX_VEL;
         else if (g_actuators.stepper_vel[i] < -MAX_VEL)
@@ -71,7 +72,7 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
   ros::Subscriber target_sub = n.subscribe("target_joints", 1, target_cb);
   ros::Subscriber state_sub = n.subscribe("joint_states", 1, state_cb);
-  ros::Publisher actuator_pub = n.advertise<openarms::ArmActuators>("arm_actuators", 1);
+  ros::Publisher actuator_pub = n.advertise<openarms::ArmActuators>("arm_actuators_autopilot", 1);
   ros::ServiceServer service = n.advertiseService("set_joint_target",
                                                   set_joint_target_srv);
   g_actuator_pub = &actuator_pub;
