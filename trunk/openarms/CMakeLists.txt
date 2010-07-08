@@ -13,11 +13,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #find_package(SDL REQUIRED)
 rosbuild_init(openarms)
 rosbuild_genmsg()
-
-#uncomment if you have defined messages
-#genmsg()
-#uncomment if you have defined services
-#gensrv()
+rosbuild_gensrv()
 
 #common commands for building c++ executables and libraries
 #rospack_add_library(${PROJECT_NAME} filters/ekf.cpp)
@@ -87,6 +83,8 @@ rosbuild_add_executable(master_keyboard master/master_keyboard.cpp)
 rosbuild_add_executable(master_gamepad master/master_gamepad.cpp)
 rosbuild_add_executable(goto_cart control/goto_cart.cpp)
 rosbuild_add_executable(state-dummy state/state-dummy.cpp)
+rosbuild_add_executable(armbus_sim sim/armbus_sim.cpp)
+rosbuild_add_executable(control_jointspace control/control_jointspace.cpp)
 #rosbuild_add_executable(laser-tilter drivers/laser-tilter.cpp)
 #rosbuild_add_executable(wrist-torques drivers/wrist-torques.cpp)
 

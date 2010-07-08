@@ -307,22 +307,26 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
     ROS_INFO("ahhh was expecting 3 servo torques");
     return;
   }
+  // flip joints as needed
+  openarms::ArmActuators act = *msg;
+  act.stepper_vel[0] *= -1;
+
   // convert stepper velocities to xmega timer values
   // 32mhz system clock / 64 = 500khz timer clock
   uint16_t stepper_timers[4];
   for (int i = 0; i < 4; i++)
   {
-    if (msg->stepper_vel[i] == 0)
+    if (act.stepper_vel[i] == 0)
       stepper_timers[i] = 0;
     else
     {
-      uint32_t t = 500000 / abs(msg->stepper_vel[i]);
+      uint32_t t = 500000 / abs(act.stepper_vel[i]);
       if (t > 0x7fff)
         t = 0x7fff;
       if (t < 100)
         t = 100; // don't thrash the mcu with interrupts...
       stepper_timers[i] = t;
-      if (msg->stepper_vel[i] < 0)
+      if (act.stepper_vel[i] < 0)
         stepper_timers[i] |= 0x8000; // high bit = direction
     }
   }
@@ -331,10 +335,10 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
 
   for (int i = 0; i < 3; i++)
   {
-    uint16_t torque = abs(msg->servo_torque[i]);
+    uint16_t torque = abs(act.servo_torque[i]);
     if (torque > 1023)
       torque = 1023;
-    send_torque(i, torque, (msg->servo_torque[i] > 0));
+    send_torque(i, torque, (act.servo_torque[i] > 0));
   }
   /*
   printf("%6x %6x %6x %6x\n", stepper_timers[0], stepper_timers[1],
