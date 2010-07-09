@@ -15,7 +15,7 @@
 #include <map>
 #include <kdl_parser/kdl_parser.hpp>
 #include <kdl/jntarray.hpp>
-#include <kdl/chainiksolverpos_nr.hpp>
+#include <kdl/chainiksolverpos_nr_jl.hpp>
 #include <kdl/chainiksolvervel_pinv.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include "geometry_msgs/Transform.h"
@@ -24,11 +24,11 @@ using std::map;
 using std::make_pair;
 using namespace Eigen;
 
-sensor_msgs::JointState g_js;
+sensor_msgs::JointState g_js, g_actual_js;
 ros::Publisher *g_joint_pub = NULL;
 tf::TransformBroadcaster *g_tf_broadcaster = NULL;
 KDL::TreeFkSolverPosFull_recursive *g_fk_solver = NULL;
-KDL::ChainIkSolverPos_NR *g_ik_solver = NULL;
+KDL::ChainIkSolverPos_NR_JL *g_ik_solver = NULL;
 tf::Transform g_target_origin, g_target;
 std::vector<double> g_pose;
 
@@ -84,6 +84,11 @@ bool ik_tool(tf::Transform t, std::vector<double> &joints)
   return true;
 }
 
+void joint_cb(const sensor_msgs::JointState &msg)
+{
+  g_actual_js = msg;
+}
+
 void target_cb(const geometry_msgs::Transform &t_msg)
 {
   // assume the transform coming in is a delta away from the center 
@@ -94,6 +99,26 @@ void target_cb(const geometry_msgs::Transform &t_msg)
   tf::Transform t;
   tf::transformMsgToTF(t_msg, t);
   std::vector<double> j_ik = g_pose;
+  if (g_actual_js.position.size() >= 7)
+  {
+    for (int i = 0; i < 7; i++)
+      j_ik[i] = g_actual_js.position[i];
+  }
+  tf::StampedTransform t_target_in_torso(g_target_origin * t, ros::Time::now(),
+                                         "torso_link", "ik_target");
+  //t_target_in_torso = g_target_origin * t;
+
+  geometry_msgs::TransformStamped target_trans_msg;
+  /*
+  target_trans.header.frame_id = "torso_link";
+  target_trans.header.stamp = ros::Time::now();
+  target_trans.child_frame_id = "ik_target";
+  */
+  //target_trans.transform.translation = g_target_origin * t;
+
+  tf::transformStampedTFToMsg(t_target_in_torso, target_trans_msg);
+  g_tf_broadcaster->sendTransform(target_trans_msg);
+
   ik_tool(g_target_origin * t, j_ik);
   g_js.header.stamp = ros::Time::now();
   g_js.position = j_ik;
@@ -129,6 +154,7 @@ int main(int argc, char **argv)
   ///////////////////////////////////////////////////////////////////////
 
   ros::Subscriber target_sub = n.subscribe("target_frame", 1, target_cb);
+  ros::Subscriber joint_sub = n.subscribe("joint_states", 1, joint_cb);
   ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("target_joints", 1);
   g_joint_pub = &joint_pub; // ugly ugly
   tf::TransformBroadcaster tf_broadcaster;
@@ -159,7 +185,25 @@ int main(int argc, char **argv)
   printf("root: %s\n", tree_root_name.c_str());
   KDL::ChainFkSolverPos_recursive fk_solver_chain(chain);
   KDL::ChainIkSolverVel_pinv ik_solver_vel(chain);
-  KDL::ChainIkSolverPos_NR ik_solver_pos(chain, fk_solver_chain, ik_solver_vel, 100, 1e-6);
+  KDL::JntArray q_min(7), q_max(7);
+  q_min.data[0] = -.7;
+  q_min.data[1] = -1.0;
+  q_min.data[2] = -1.57;
+  q_min.data[3] = -1.6;
+  q_min.data[4] = -3.14;
+  q_min.data[5] = -1.57;
+  q_min.data[6] = -3.14;
+  q_max.data[0] = 1.0;
+  q_max.data[1] = 0.0;
+  q_max.data[2] = 1.57;
+  q_max.data[3] = 1.0;
+  q_max.data[4] = 3.14;
+  q_max.data[5] = 1.57;
+  q_max.data[6] = 3.14;
+  KDL::ChainIkSolverPos_NR_JL ik_solver_pos(chain, q_min, q_max,
+                                            fk_solver_chain, ik_solver_vel, 
+                                            100, 1e-6);
+  //KDL::ChainIkSolverPos_NR ik_solver_pos(chain, fk_solver_chain, ik_solver_vel, 100, 1e-6);
   g_ik_solver = &ik_solver_pos;
 
   //boost::scoped_ptr<KDL::TreeFkSolverPosFull_recursive> fk_solver;
@@ -177,6 +221,9 @@ int main(int argc, char **argv)
 
   // set origin to be something we can comfortably reach
   g_target_origin = fk_tool(g_pose);
+  btQuaternion target_quat;
+  target_quat.setEuler(1.57, -1.57, 0);
+  g_target_origin.setRotation(target_quat);
   //tf::Transform(btQuaternion::getIdentity(), btVector3(0, 0, 0));
 
   while (ros::ok())

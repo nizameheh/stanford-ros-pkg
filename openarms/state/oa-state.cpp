@@ -8,6 +8,8 @@ static double g_joint_pos[7];
 ros::Publisher *g_joint_pub = NULL;
 static int32_t g_stepper_offsets[4], g_servo_offsets[3];
 bool g_offset_init_complete = false;
+int32_t g_servo_wraps[3];
+enum servo_wrap_t { COMING_FROM_LOW, COMING_FROM_HIGH, NOT_IN_WRAP} g_servo_in_wrap[3];
 
 void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
 {
@@ -16,6 +18,8 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
     g_offset_init_complete = true;
     for (int i = 0; i < 4; i++)
       g_stepper_offsets[i] = sensors->pos[i];
+    for (int i = 0; i < 3; i++)
+      g_servo_offsets[i] = sensors->pos[i+4];
   }
 
   // 10-microstep, 1.8 deg/step
@@ -23,6 +27,50 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
   g_joint_pos[1] = (sensors->pos[1] - g_stepper_offsets[1]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 10.133 + g_joint_pos[0] / 1.97; 
   g_joint_pos[2] = (sensors->pos[2] - g_stepper_offsets[2]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 14;
   g_joint_pos[3] = (sensors->pos[3] - g_stepper_offsets[3]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 14 - 1.57; // assume we init with elbow straight down
+
+  const int32_t WRAP_THRESH = 30, NOT_IN_WRAP_THRESH = 60;
+  for (int i = 0; i < 3; i++)
+  {
+    int32_t pos = sensors->pos[i+4];
+    if (pos < WRAP_THRESH)
+    {
+      if (g_servo_in_wrap[i] == COMING_FROM_HIGH)
+        g_servo_wraps[i]++;
+      g_servo_in_wrap[i] = COMING_FROM_LOW;
+    }
+    else if (pos > 1024 - WRAP_THRESH)
+    {
+      if (g_servo_in_wrap[i] == COMING_FROM_LOW)
+        g_servo_wraps[i]--;
+      g_servo_in_wrap[i] = COMING_FROM_HIGH;
+    }
+    else if ((pos >= WRAP_THRESH && pos < NOT_IN_WRAP_THRESH) ||
+             (pos > 1024 - NOT_IN_WRAP_THRESH && pos <= 1024 - WRAP_THRESH))
+    {
+      g_servo_in_wrap[i] = NOT_IN_WRAP;
+    }
+    if (g_servo_in_wrap[i] != NOT_IN_WRAP &&
+        (pos > NOT_IN_WRAP_THRESH && pos < 1024 - NOT_IN_WRAP_THRESH))
+    {
+      if (g_servo_in_wrap[i] == COMING_FROM_HIGH)
+        pos = 1023;
+      else
+        pos = 0;
+    }
+    g_joint_pos[i+4] = (pos - g_servo_offsets[i] + 1024 * g_servo_wraps[i]) * 2 * 3.1415 / 1023.0 / 2.8;
+    /*
+    if (i == 1)
+      printf("%8d %4d %4d %4d %.3f\n", 
+             pos, sensors->pos[i+4],
+             g_servo_wraps[i], g_servo_in_wrap[i],
+             g_joint_pos[i+4]);
+    */
+  }
+  // assume servos are all geared down 3:1
+  //g_joint_pos[4] = (sensors->pos[4] - g_servo_offsets[0])*2*3.14/1024.0/4.0;
+  //g_joint_pos[5] = (sensors->pos[5] - g_servo_offsets[1])*2*3.14/1024.0/3.0;
+  //g_joint_pos[6] = (sensors->pos[6] - g_servo_offsets[2])*2*3.14/1024.0/3.0;
+
   /*
   static int print_count = 0;
   if (print_count++ % 50 == 0)
@@ -56,7 +104,12 @@ int main(int argc, char **argv)
   for (uint32_t i = 0; i < 4; i++)
     g_stepper_offsets[i] = 0;
   for (uint32_t i = 0; i < 3; i++)
+  {
     g_servo_offsets[i] = 0;
+    g_servo_wraps[i] = 0;
+    g_servo_in_wrap[i] = NOT_IN_WRAP;
+  }
+
   ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("joint_states", 1);
   g_joint_pub = &joint_pub; // ugly ugly
   ros::Subscriber sensor_sub = n.subscribe("arm_sensors", 1, sensors_cb);

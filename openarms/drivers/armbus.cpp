@@ -17,6 +17,9 @@ LightweightSerial *g_serial = NULL;
 const size_t NUM_MOTORS = 3;
 enum rx_state_t { PING, STEPPER_POS_0, STEPPER_POS_1, STEPPER_ACCEL_1, 
                   SERVO_POS_0, SERVO_POS_1, SERVO_POS_2} g_rx_state;
+
+uint16_t g_stepper_timers[4];
+uint16_t g_servo_torques[4], g_servo_dirs[4];
 // the servos are assumed to be programmed as 0,1,..,NUM_MOTORS
 openarms::ArmSensors sensors_msg;
 
@@ -126,6 +129,7 @@ bool process_byte(uint8_t b, ros::Publisher *pub)
         }
         else if (g_rx_state == STEPPER_ACCEL_1)
         {
+          return true;
 /*
           for (int i = 0; i < 8; i++)
             printf("  %x ", pkt[i]);
@@ -272,7 +276,7 @@ void query_accelerometer(uint8_t id)
   pkt[5] = 0x2b; // "temperature" aka accelerometer
   pkt[6] = 8; // 8 bytes for now (version, X, Y, Z, temperature)
   pkt[7] = calc_checksum(pkt, 7);
-  if (id != 0x10)
+  if (id != 10)
   {
     ROS_INFO("woah. only stepper id 10 has an accelerometer");
     return;
@@ -331,16 +335,23 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
         stepper_timers[i] |= 0x8000; // high bit = direction
     }
   }
-  send_stepper_vel(11, stepper_timers[0], stepper_timers[1]);
-  send_stepper_vel(10, stepper_timers[3], stepper_timers[2]);
+  g_stepper_timers[0] = stepper_timers[0];
+  g_stepper_timers[1] = stepper_timers[1];
+  g_stepper_timers[2] = stepper_timers[3];
+  g_stepper_timers[3] = stepper_timers[2];
 
   for (int i = 0; i < 3; i++)
   {
     uint16_t torque = abs(act.servo_torque[i]);
     if (torque > 1023)
       torque = 1023;
-    send_torque(i, torque, (act.servo_torque[i] > 0));
+    g_servo_torques[i] = torque;
+    g_servo_dirs[i] = (act.servo_torque[i] > 0);
   }
+  // flip axes as needed
+  g_servo_dirs[0] = !g_servo_dirs[0];
+  g_servo_dirs[1] = !g_servo_dirs[1];
+  g_servo_dirs[2] = !g_servo_dirs[2];
   /*
   printf("%6x %6x %6x %6x\n", stepper_timers[0], stepper_timers[1],
          stepper_timers[2], stepper_timers[3]);
@@ -382,7 +393,13 @@ int main(int argc, char **argv)
   g_serial = s;
   ros::Subscriber sub = n.subscribe("arm_actuators", 1, actuators_cb);
   ros::Publisher pub = n.advertise<openarms::ArmSensors>("arm_sensors",1);
-  ros::Time t_prev = ros::Time::now();
+  ros::Time t_prev = ros::Time::now(), t_wholearm = ros::Time::now();
+  for (int i = 0; i < 4; i++)
+  {
+    g_stepper_timers[i] = 0;
+    g_servo_torques[i] = 0;
+    g_servo_dirs[i] = 0;
+  }
   //ros::spin();
   sensors_msg.pos.resize(7);
   send_stepper_vel(10, 0, 0); // stop em
@@ -390,14 +407,16 @@ int main(int argc, char **argv)
   enable_motor(10, 1); // power em up
   enable_motor(11, 1); // power em up
   
-  bool even = false;
   uint32_t scheduled = 0;
   bool replied = false;
   const uint32_t SCH_BEGIN           = 0;
   const uint32_t SCH_STEPPER_POS_0   = 0;
   const uint32_t SCH_STEPPER_POS_1   = 1;
   const uint32_t SCH_STEPPER_ACCEL_1 = 2;
-  const uint32_t SCH_END             = 2; // only query first guy for now
+  const uint32_t SCH_SERVO_0         = 3;
+  const uint32_t SCH_SERVO_1         = 4;
+  const uint32_t SCH_SERVO_2         = 5;
+  const uint32_t SCH_END             = 5; 
   while (n.ok())
   {
     uint8_t read_buf[60];
@@ -415,27 +434,55 @@ int main(int argc, char **argv)
       }
     }
     else
-      ros::Duration(0.001).sleep();
+      ros::Duration(0.0001).sleep();
     ros::spinOnce();
     // blast status-request packets periodically
     ros::Time t = ros::Time::now();
-    if ((t - t_prev).toSec() > 0.1 || 
-        ((t - t_prev).toSec() > 0.05 && replied))
+    if ((t - t_prev).toSec() > 0.05 || replied)
+        //((t - t_prev).toSec() > 0.001 && replied))
     {
+      //printf("%d\n", scheduled);
       replied = false;
-      enable_led(11, even ? 1 : 0);
-      even = !even;
+      //enable_led(11, even ? 1 : 0);
+      //even = !even;
       //send_stepper_vel(11, 0x7fff, 0x7fff);
       if (scheduled == SCH_STEPPER_POS_0)
+      {
+        send_stepper_vel(11, g_stepper_timers[0], g_stepper_timers[1]);
         query_stepper_positions(11);
+      }
       else if (scheduled == SCH_STEPPER_POS_1)
+      {
+        //printf("stepper 1 send\n");
+        send_stepper_vel(10, g_stepper_timers[2], g_stepper_timers[3]);
         query_stepper_positions(10);
-      /*
-      else if (scheduled == SCH_STEPPER_POS_1)
-        query_accelerometer(11);
-        */
+      }
+      else if (scheduled == SCH_STEPPER_ACCEL_1)
+        query_accelerometer(10);
+      else if (scheduled == SCH_SERVO_0)
+      {
+        send_torque(0, g_servo_torques[0], g_servo_dirs[0]);
+        query_motor(0);
+      }
+      else if (scheduled == SCH_SERVO_1)
+      {
+        send_torque(1, g_servo_torques[1], g_servo_dirs[1]);
+        query_motor(1);
+      }
+      else if (scheduled == SCH_SERVO_2)
+      {
+        send_torque(2, g_servo_torques[2], g_servo_dirs[2]);
+        query_motor(2);
+      }
       if (++scheduled > SCH_END)
+      {
+        double d_wholearm = (t - t_wholearm).toSec();
+        static int s_printcount = 0;
+        if (s_printcount++ % 10 == 0)
+          printf("%.3f hz\n", 1.0 / d_wholearm);
+        t_wholearm = t;
         scheduled = SCH_BEGIN;
+      }
       t_prev = t;
 
 #if 0
@@ -446,6 +493,7 @@ int main(int argc, char **argv)
   }
   enable_motor(10, 0); // turn em off
   enable_motor(11, 0); // turn em off
+  ros::Duration(0.1).sleep(); // let the shutdown packets get sent out
   delete s;
   return 0;
 }

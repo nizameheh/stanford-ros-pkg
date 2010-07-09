@@ -23,7 +23,7 @@ bool set_joint_target_srv(openarms::SetJointTarget::Request &req,
 
 void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
 {
-  const double MAX_VEL_BIGDOGS = 3000, MAX_VEL_LITTLEDOGS = 8000;
+  const double MAX_VEL_BIGDOGS = 2000, MAX_VEL_LITTLEDOGS = 3000;
   const double MAX_ACCEL_PER_SEC = 3000;
   static ros::Time s_prev_time;
   static bool s_prev_time_init = false;
@@ -60,6 +60,18 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
           g_actuators.stepper_vel[i] = MAX_VEL;
         else if (g_actuators.stepper_vel[i] < -MAX_VEL)
           g_actuators.stepper_vel[i] = -MAX_VEL;
+      }
+      for (int i = 4; i < 7; i++)
+      {
+        double err = g_target.position[i] - state_msg->position[i];
+        double desired_torque = 1000 * err;
+        // enforce torque limit
+        int32_t MAX_TORQUE = 500;
+        if (desired_torque > MAX_TORQUE)
+          desired_torque = MAX_TORQUE;
+        else if (desired_torque < -MAX_TORQUE)
+          desired_torque = -MAX_TORQUE;
+        g_actuators.servo_torque[i-4] = desired_torque;
       }
       g_actuator_pub->publish(g_actuators);
     }
