@@ -1,0 +1,18 @@
+<package>
+  <description brief="PNI spacepoint driver">
+    A simple driver for the PNI spacepoint. The starting point for this driver was Nirav Patel's spacepoint python module, which can be found here:
+
+    http://eclecti.cc/hardware/easy-absolute-orientation-pni-spacepoint-fusion-in-python
+
+  </description>
+  <author>Morgan Quigley mquigley@cs.stanford.edu, wrapping code by Nirav Patel</author>
+  <license>BSD</license>
+  <url>http://ai.stanford.edu/~mquigley</url>
+  <depend package="roscpp"/>
+  <depend package="rospy"/>
+  <depend package="tf"/>
+  <depend package="geometry_msgs"/>
+  <rosdep name="python-hid"/>
+  <rosdep name="libhid"/>
+</package>
+
