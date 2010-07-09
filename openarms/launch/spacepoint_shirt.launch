@@ -1,0 +1,19 @@
+<launch>
+  <node name="spacepoint1" pkg="spacepoint" type="spacepoint_node">
+    <remap from="spacepoint_quat" to="spacepoint1_quat"/>
+    <param name="serial" value="4302497230353059066E0036"/>
+  </node>
+  <node name="spacepoint2" pkg="spacepoint" type="spacepoint_node">
+    <remap from="spacepoint_quat" to="spacepoint2_quat"/>
+    <param name="serial" value="4302324230353059066C0036"/>
+  </node>
+  <node name="spacepoint3" pkg="spacepoint" type="spacepoint_node">
+    <remap from="spacepoint_quat" to="spacepoint3_quat"/>
+    <param name="serial" value="4302517430353059066F0036"/>
+  </node>
+  <node name="spacepoint4" pkg="spacepoint" type="spacepoint_node">
+    <remap from="spacepoint_quat" to="spacepoint4_quat"/>
+    <param name="serial" value="4302453230353059066F0036"/>
+  </node>
+</launch>
+
