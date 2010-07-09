@@ -117,7 +117,7 @@
   <joint name="shoulder_abduction" type="continuous">
     <parent link="shoulder_flexion_link"/>
     <child link="shoulder_abduction_link"/>
-    <origin xyz="0 0 0.278" rpy="-1.57 -0.3 0"/>
+    <origin xyz="0 0 0.278" rpy="-1.57 0 0"/>
     <axis xyz="0 0 1"/>
   </joint>
   <joint name="humeral_rotation" type="continuous">

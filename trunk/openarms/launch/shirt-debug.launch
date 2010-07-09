@@ -1,0 +1,8 @@
+<launch>
+  <param name="master_description" textfile="$(find openarms)/urdf/idealized.xml"/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher">
+    <remap from="joint_states" to="master_state"/>
+    <remap from="robot_description" to="master_description"/>
+  </node>
+  <!--<node name="rviz" pkg="rviz" type="rviz"/>-->
+</launch>
