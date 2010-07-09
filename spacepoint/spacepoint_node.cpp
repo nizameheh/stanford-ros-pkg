@@ -8,12 +8,13 @@ bool match_serial_number(struct usb_dev_handle const *usbdev,
                          void *custom, unsigned int len)
 {
   string *dev_serial = (string *)custom;
-  char *buffer = new char[dev_serial->length()+1];
+  char *buffer = new char[dev_serial->length()+2];
   // there must be an easier way to do this...
-  usb_get_string_simple(const_cast<usb_dev_handle *>(usbdev), usb_device(const_cast<usb_dev_handle *>(usbdev))->descriptor.iSerialNumber, buffer, dev_serial->length());
-  //buffer[dev_serial->length()] = 0;
-  //printf("trying to match %d with [%s]\n", dev_serial->length(), buffer);
-  bool matched = (strncmp(buffer, dev_serial->c_str(), len) == 0);
+  usb_get_string_simple(const_cast<usb_dev_handle *>(usbdev), usb_device(const_cast<usb_dev_handle *>(usbdev))->descriptor.iSerialNumber, buffer, dev_serial->length()+1);
+  buffer[dev_serial->length()+1] = 0;
+  bool matched = (strncmp(buffer, dev_serial->c_str(), dev_serial->length()) == 0);
+  printf("trying to match %d [%s] with [%s]: %d\n", dev_serial->length(), 
+         dev_serial->c_str(), buffer, (matched ? 1 : 0));
   delete[] buffer;
   return matched;
 }
@@ -65,7 +66,7 @@ int main(int argc, char **argv)
     if (ret != HID_RET_SUCCESS)
     {
       ROS_ERROR("hid_interrupt_read failed, error %d\n", ret);
-      continue; // try again maybe?
+      break; // over?
     }
     double val[7];
     for (int i = 0; i < 7; i++)
