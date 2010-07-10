@@ -65,10 +65,7 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
       for (int i = 4; i < 8; i++)
       {
         double err = 0;
-        if (i < 7)
           err = g_target.position[i] - state_msg->position[i];
-        else
-          err = g_gripper_target - state_msg->position[i];
         double desired_torque = 1000 * err;
         // enforce torque limit
         int32_t MAX_TORQUE = 500;

@@ -4,7 +4,7 @@
 #include <tf/transform_broadcaster.h>
 #include "openarms/ArmSensors.h"
 
-static double g_joint_pos[7];
+static double g_joint_pos[8];
 ros::Publisher *g_joint_pub = NULL;
 static int32_t g_stepper_offsets[4], g_servo_offsets[3];
 bool g_offset_init_complete = false;
@@ -66,6 +66,8 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
              g_joint_pos[i+4]);
     */
   }
+  // handle the gripper now
+  g_joint_pos[7] = (sensors->pos[7] - 216) / (371.0 - 216.0);
   // assume servos are all geared down 3:1
   //g_joint_pos[4] = (sensors->pos[4] - g_servo_offsets[0])*2*3.14/1024.0/4.0;
   //g_joint_pos[5] = (sensors->pos[5] - g_servo_offsets[1])*2*3.14/1024.0/3.0;
@@ -79,8 +81,8 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
   if (g_joint_pub)
   {
     sensor_msgs::JointState joint_state;
-    joint_state.name.resize(7);
-    joint_state.position.resize(7);
+    joint_state.name.resize(8);
+    joint_state.position.resize(8);
     joint_state.name[0] = "shoulder1";
     joint_state.name[1] = "shoulder2";
     joint_state.name[2] = "shoulder3";
@@ -88,7 +90,8 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
     joint_state.name[4] = "wrist1";
     joint_state.name[5] = "wrist2";
     joint_state.name[6] = "wrist3";
-    for (int i = 0; i < 7; i++)
+    joint_state.name[7] = "gripper";
+    for (int i = 0; i < 8; i++)
       joint_state.position[i] = g_joint_pos[i];
     joint_state.header.stamp = ros::Time::now();
     g_joint_pub->publish(joint_state);
@@ -99,7 +102,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "oa_state");
   ros::NodeHandle n;
-  for (uint32_t i = 0; i < 7; i++)
+  for (uint32_t i = 0; i < 8; i++)
     g_joint_pos[i] = 0;
   for (uint32_t i = 0; i < 4; i++)
     g_stepper_offsets[i] = 0;
