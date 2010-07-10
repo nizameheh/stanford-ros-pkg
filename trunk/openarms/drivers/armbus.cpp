@@ -310,7 +310,7 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
     ROS_INFO("ahhh was expecting 4 stepper velocities");
     return;
   }
-  if (msg->servo_torque.size() != 3)
+  if (msg->servo_torque.size() != 4)
   {
     ROS_INFO("ahhh was expecting 3 servo torques");
     return;
@@ -344,7 +344,7 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
   g_stepper_timers[2] = stepper_timers[3];
   g_stepper_timers[3] = stepper_timers[2];
 
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < 4; i++)
   {
     uint16_t torque = abs(act.servo_torque[i]);
     if (torque > 1023)

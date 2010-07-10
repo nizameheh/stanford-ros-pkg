@@ -40,10 +40,10 @@ if __name__ == '__main__':
       if len(msg.axes) >= 3:
         g_servo_torque[2] = msg.axes[0] * 1023.0
         g_servo_torque[3] = msg.axes[1] * 1023.0
-        if msg.axes[2] > 0.7:
-          g_autopilot = True
-        else
-          g_autopilot = False
+    if msg.axes[2] > 0.7:
+      g_autopilot = True
+    else:
+      g_autopilot = False
 
   def act_cb(msg):
     global g_autopilot_act
