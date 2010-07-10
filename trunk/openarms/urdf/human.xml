@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <robot name="human">
-  <link name="torso_link">
+  <link name="human_torso_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0 -.20"/>
@@ -12,7 +12,7 @@
       </material>
     </visual>
   </link>
-  <link name="shoulder_flexion_link">
+  <link name="human_shoulder_flexion_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0 .228" rpy="0 0 0"/>
@@ -24,7 +24,7 @@
       </material>
     </visual>
   </link>
-  <link name="shoulder_abduction_link">
+  <link name="human_shoulder_abduction_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz=".06 0 0" rpy="0 0 0"/>
@@ -36,7 +36,7 @@
       </material>
     </visual>
   </link>
-  <link name="humeral_rotation_link">
+  <link name="human_humeral_rotation_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0 0.28" rpy="0 0 0"/>
@@ -48,7 +48,7 @@
       </material>
     </visual>
   </link>
-  <link name="elbow_link">
+  <link name="human_elbow_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz=".2 0 0" rpy="0 0 0"/>
@@ -60,7 +60,7 @@
       </material>
     </visual>
   </link>
-  <link name="upperarm_wiimote_link">
+  <link name="human_upperarm_wiimote_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>

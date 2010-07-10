@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <robot name="idealized">
-  <link name="torso_link">
+  <link name="human_torso_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0 -.20"/>
@@ -12,7 +12,7 @@
       </material>
     </visual>
   </link>
-  <link name="shoulder_flexion_link">
+  <link name="human_shoulder_flexion_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0 .228" rpy="0 0 0"/>
@@ -24,7 +24,7 @@
       </material>
     </visual>
   </link>
-  <link name="shoulder_abduction_link">
+  <link name="human_shoulder_abduction_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz=".06 0 0" rpy="0 0 0"/>
@@ -36,7 +36,7 @@
       </material>
     </visual>
   </link>
-  <link name="humeral_rotation_link">
+  <link name="human_humeral_rotation_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0 0.28" rpy="0 0 0"/>
@@ -48,7 +48,7 @@
       </material>
     </visual>
   </link>
-  <link name="elbow_link">
+  <link name="human_elbow_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz=".07 0 0" rpy="0 0 0"/>
@@ -60,7 +60,7 @@
       </material>
     </visual>
   </link>
-  <link name="forearm_roll_link">
+  <link name="human_forearm_roll_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0 .25" rpy="0 0 0"/>
@@ -72,7 +72,7 @@
       </material>
     </visual>
   </link>
-  <link name="wrist_pitch_link">
+  <link name="human_wrist_pitch_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -84,7 +84,7 @@
       </material>
     </visual>
   </link>
-  <link name="wrist_roll_link">
+  <link name="human_wrist_roll_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0 0.04" rpy="0 0 0"/>
@@ -96,7 +96,7 @@
       </material>
     </visual>
   </link>
-  <link name="tool_link">
+  <link name="human_tool_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <visual>
       <origin xyz="0 0 -.025" rpy="0 0 0"/>
@@ -108,51 +108,51 @@
       </material>
     </visual>
   </link>
-  <joint name="shoulder_flexion" type="continuous">
-    <parent link="torso_link"/>
-    <child link="shoulder_flexion_link"/>
+  <joint name="human_shoulder_flexion" type="continuous">
+    <parent link="human_torso_link"/>
+    <child link="human_shoulder_flexion_link"/>
     <origin xyz="0 0 0" rpy="0 1.57 0"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <joint name="shoulder_abduction" type="continuous">
-    <parent link="shoulder_flexion_link"/>
-    <child link="shoulder_abduction_link"/>
+  <joint name="human_shoulder_abduction" type="continuous">
+    <parent link="human_shoulder_flexion_link"/>
+    <child link="human_shoulder_abduction_link"/>
     <origin xyz="0 0 0.278" rpy="-1.57 0 0"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <joint name="humeral_rotation" type="continuous">
-    <parent link="shoulder_abduction_link"/>
-    <child link="humeral_rotation_link"/>
+  <joint name="human_humeral_rotation" type="continuous">
+    <parent link="human_shoulder_abduction_link"/>
+    <child link="human_humeral_rotation_link"/>
     <origin xyz="0 0 0" rpy="3.14 -1.57 0"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <joint name="elbow" type="continuous">
-    <parent link="humeral_rotation_link"/>
-    <child link="elbow_link"/>
+  <joint name="human_elbow" type="continuous">
+    <parent link="human_humeral_rotation_link"/>
+    <child link="human_elbow_link"/>
     <origin xyz="0 0 .40" rpy="-1.57 0 0"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <joint name="forearm_roll" type="continuous">
-    <parent link="elbow_link"/>
-    <child link="forearm_roll_link"/>
+  <joint name="human_forearm_roll" type="continuous">
+    <parent link="human_elbow_link"/>
+    <child link="human_forearm_roll_link"/>
     <origin xyz="0 0 0" rpy="0 1.57 0"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <joint name="wrist_pitch" type="continuous">
-    <parent link="forearm_roll_link"/>
-    <child link="wrist_pitch_link"/>
+  <joint name="human_wrist_pitch" type="continuous">
+    <parent link="human_forearm_roll_link"/>
+    <child link="human_wrist_pitch_link"/>
     <origin xyz="0 0 0.37" rpy="-1.57 0 0"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <joint name="wrist_roll" type="continuous">
-    <parent link="wrist_pitch_link"/>
-    <child link="wrist_roll_link"/>
+  <joint name="human_wrist_roll" type="continuous">
+    <parent link="human_wrist_pitch_link"/>
+    <child link="human_wrist_roll_link"/>
     <origin xyz="0 0 0" rpy="1.57 0 0"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <joint name="tool" type="fixed">
-    <parent link="wrist_roll_link"/>
-    <child link="tool_link"/>
+  <joint name="human_tool" type="fixed">
+    <parent link="human_wrist_roll_link"/>
+    <child link="human_tool_link"/>
     <origin xyz="0 0 .1" rpy="0 0 0"/>
   </joint>
 </robot>
