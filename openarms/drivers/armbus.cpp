@@ -14,9 +14,8 @@
 #include "openarms/ArmSensors.h"
 
 LightweightSerial *g_serial = NULL; 
-const size_t NUM_MOTORS = 3;
 enum rx_state_t { PING, STEPPER_POS_0, STEPPER_POS_1, STEPPER_ACCEL_1, 
-                  SERVO_POS_0, SERVO_POS_1, SERVO_POS_2} g_rx_state;
+                SERVO_POS_0, SERVO_POS_1, SERVO_POS_2, SERVO_POS_3} g_rx_state;
 
 uint16_t g_stepper_timers[4];
 uint16_t g_servo_torques[4], g_servo_dirs[4];
@@ -115,7 +114,8 @@ bool process_byte(uint8_t b, ros::Publisher *pub)
         }
         else if (g_rx_state == SERVO_POS_0 ||
                  g_rx_state == SERVO_POS_1 ||
-                 g_rx_state == SERVO_POS_2)
+                 g_rx_state == SERVO_POS_2 ||
+                 g_rx_state == SERVO_POS_3 )
         {
           uint16_t pos = pkt[0] + (uint16_t)(pkt[1] << 8);
           if (g_rx_state == SERVO_POS_0)
@@ -124,6 +124,8 @@ bool process_byte(uint8_t b, ros::Publisher *pub)
             sensors_msg.pos[5] = pos;
           else if (g_rx_state == SERVO_POS_2)
             sensors_msg.pos[6] = pos;
+          else if (g_rx_state == SERVO_POS_3)
+            sensors_msg.pos[7] = pos;
           //printf("%d: %5d\n", servo_id, pos);
           return true;
         }
@@ -234,9 +236,11 @@ void query_motor(uint8_t id)
     g_rx_state = SERVO_POS_1;
   else if (id == 2)
     g_rx_state = SERVO_POS_2;
+  else if (id == 3)
+    g_rx_state = SERVO_POS_3;
   else
   {
-    ROS_INFO("woah there. servo id must be in {0,1,2}");
+    ROS_INFO("woah there. servo id must be in {0,1,2,3}");
     return;
   }
   g_serial->write_block(pkt, 8);
@@ -352,6 +356,7 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
   g_servo_dirs[0] = !g_servo_dirs[0];
   g_servo_dirs[1] = !g_servo_dirs[1];
   g_servo_dirs[2] = !g_servo_dirs[2];
+  g_servo_dirs[3] = !g_servo_dirs[3];
   /*
   printf("%6x %6x %6x %6x\n", stepper_timers[0], stepper_timers[1],
          stepper_timers[2], stepper_timers[3]);
@@ -401,7 +406,7 @@ int main(int argc, char **argv)
     g_servo_dirs[i] = 0;
   }
   //ros::spin();
-  sensors_msg.pos.resize(7);
+  sensors_msg.pos.resize(8);
   send_stepper_vel(10, 0, 0); // stop em
   send_stepper_vel(11, 0, 0); // stop em
   enable_motor(10, 1); // power em up
@@ -416,7 +421,8 @@ int main(int argc, char **argv)
   const uint32_t SCH_SERVO_0         = 3;
   const uint32_t SCH_SERVO_1         = 4;
   const uint32_t SCH_SERVO_2         = 5;
-  const uint32_t SCH_END             = 5; 
+  const uint32_t SCH_SERVO_3         = 6;
+  const uint32_t SCH_END             = 6; 
   while (n.ok())
   {
     uint8_t read_buf[60];
@@ -473,6 +479,11 @@ int main(int argc, char **argv)
       {
         send_torque(2, g_servo_torques[2], g_servo_dirs[2]);
         query_motor(2);
+      }
+      else if (scheduled == SCH_SERVO_3)
+      {
+        send_torque(3, g_servo_torques[3], g_servo_dirs[3]);
+        query_motor(3);
       }
       if (++scheduled > SCH_END)
       {

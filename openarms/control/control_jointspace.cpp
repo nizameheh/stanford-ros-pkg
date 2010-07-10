@@ -5,6 +5,7 @@
 using std::string;
 
 sensor_msgs::JointState g_target;
+double g_gripper_target = 0;
 ros::Publisher *g_actuator_pub = NULL;
 openarms::ArmActuators g_actuators;
 //double g_stepper_vel[4];
@@ -61,9 +62,13 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
         else if (g_actuators.stepper_vel[i] < -MAX_VEL)
           g_actuators.stepper_vel[i] = -MAX_VEL;
       }
-      for (int i = 4; i < 7; i++)
+      for (int i = 4; i < 8; i++)
       {
-        double err = g_target.position[i] - state_msg->position[i];
+        double err = 0;
+        if (i < 7)
+          err = g_target.position[i] - state_msg->position[i];
+        else
+          err = g_gripper_target - state_msg->position[i];
         double desired_torque = 1000 * err;
         // enforce torque limit
         int32_t MAX_TORQUE = 500;
@@ -89,7 +94,7 @@ int main(int argc, char **argv)
                                                   set_joint_target_srv);
   g_actuator_pub = &actuator_pub;
   g_actuators.stepper_vel.resize(4);
-  g_actuators.servo_torque.resize(3);
+  g_actuators.servo_torque.resize(4);
   for (int i = 0; i < 4; i++)
     g_actuators.stepper_vel[i] = 0;
 
