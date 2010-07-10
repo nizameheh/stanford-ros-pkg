@@ -10,13 +10,16 @@
 #include "LinearMath/btTransform.h"
 #include "tf/transform_datatypes.h"
 #include "tf/transform_broadcaster.h"
+#include "tf/transform_listener.h"
 using std::vector;
 
-//ros::Publisher *g_target_pub = NULL;
+ros::Publisher *g_target_pub = NULL;
 tf::TransformBroadcaster *g_tf_broadcaster = NULL;
+tf::TransformListener *g_tf_listener = NULL;
 geometry_msgs::Quaternion q0, q1, q2, q3;
 bool init_complete[4];
 ros::Publisher *g_joint_pub = NULL;
+tf::Transform g_workspace_center;
 
 void q0_cb(const geometry_msgs::Quaternion::ConstPtr &q)
 {
@@ -67,13 +70,13 @@ void q0_cb(const geometry_msgs::Quaternion::ConstPtr &q)
   js.header.stamp = ros::Time::now();
   js.position = joint_pos;
   js.name.resize(7);
-  js.name[0] = "shoulder_flexion";
-  js.name[1] = "shoulder_abduction";
-  js.name[2] = "humeral_rotation";
-  js.name[3] = "elbow";
-  js.name[4] = "forearm_roll";
-  js.name[5] = "wrist_pitch";
-  js.name[6] = "wrist_roll";
+  js.name[0] = "human_shoulder_flexion";
+  js.name[1] = "human_shoulder_abduction";
+  js.name[2] = "human_humeral_rotation";
+  js.name[3] = "human_elbow";
+  js.name[4] = "human_forearm_roll";
+  js.name[5] = "human_wrist_pitch";
+  js.name[6] = "human_wrist_roll";
   g_joint_pub->publish(js);
   
   tf::StampedTransform t0s(t0, ros::Time::now(), "world", "sp0");
@@ -92,13 +95,40 @@ void q0_cb(const geometry_msgs::Quaternion::ConstPtr &q)
 
   geometry_msgs::TransformStamped world_trans;
   world_trans.header.frame_id = "world";
-  world_trans.child_frame_id = "torso_link";
+  world_trans.child_frame_id = "human_torso_link";
   world_trans.transform.translation.x = 0;
   world_trans.transform.translation.y = 0;
   world_trans.transform.translation.z = 0;
   world_trans.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0,0,0);
   world_trans.header.stamp = ros::Time::now();
   g_tf_broadcaster->sendTransform(world_trans);
+
+  // broadcast the workspace center
+  geometry_msgs::TransformStamped workspace_center_trans;
+  workspace_center_trans.header.frame_id = "world";
+  workspace_center_trans.header.stamp = ros::Time::now();
+  workspace_center_trans.child_frame_id = "workspace_center";
+  btVector3 workspace_center(0.35, 0.4, -0.3);
+  workspace_center_trans.transform.translation.x = workspace_center.x();
+  workspace_center_trans.transform.translation.y = workspace_center.y();
+  workspace_center_trans.transform.translation.z = workspace_center.z();
+  workspace_center_trans.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0,0,0);
+  g_tf_broadcaster->sendTransform(workspace_center_trans);
+
+  tf::StampedTransform tool_in_workspace;
+  try
+  {
+    g_tf_listener->lookupTransform("workspace_center", "human_tool_link",
+                                   ros::Time(0), tool_in_workspace);
+    geometry_msgs::Transform target_msg;
+    tf::transformTFToMsg(tool_in_workspace, target_msg);
+    g_target_pub->publish(target_msg);
+  }
+  catch (tf::TransformException ex)
+  {
+    ROS_ERROR("%s", ex.what());
+  }
+
 }
 
 void q1_cb(const geometry_msgs::Quaternion::ConstPtr &q)
@@ -128,12 +158,18 @@ int main(int argc, char **argv)
   ros::Subscriber q2_sub = n.subscribe("spacepoint3_quat", 1, q2_cb);
   ros::Subscriber q3_sub = n.subscribe("spacepoint4_quat", 1, q3_cb);
   ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("master_state", 1);
+  ros::Publisher target_pub = n.advertise<geometry_msgs::Transform>("target_frame", 1);
+  g_target_pub = &target_pub;
   g_joint_pub = &joint_pub;
   for (int i = 0; i < 4; i++)
     init_complete[i] = false;
+  g_workspace_center = btTransform(btQuaternion::getIdentity(),
+                                   btVector3(0, 0, 0.3));
 
   tf::TransformBroadcaster tf_broadcaster;
+  tf::TransformListener tf_listener;
   g_tf_broadcaster = &tf_broadcaster;
+  g_tf_listener = &tf_listener;
   puts("greetings. ctrl-c to exit.");
   //t = tf::Transform(btQuaternion::getIdentity(), btVector3(0,0,0));
   

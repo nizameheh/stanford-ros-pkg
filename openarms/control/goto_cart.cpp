@@ -27,6 +27,7 @@ using namespace Eigen;
 sensor_msgs::JointState g_js, g_actual_js;
 ros::Publisher *g_joint_pub = NULL;
 tf::TransformBroadcaster *g_tf_broadcaster = NULL;
+tf::TransformListener *g_tf_listener = NULL;
 KDL::TreeFkSolverPosFull_recursive *g_fk_solver = NULL;
 KDL::ChainIkSolverPos_NR_JL *g_ik_solver = NULL;
 tf::Transform g_target_origin, g_target;
@@ -96,17 +97,29 @@ void target_cb(const geometry_msgs::Transform &t_msg)
   //tf::Transform t_bump(btQuaternion::getIdentity(),
   //                     btVector3(d_pose, 0, 0));
   //tf::Transform t_target = t_tool * t_bump;
-  tf::Transform t;
-  tf::transformMsgToTF(t_msg, t);
+  tf::StampedTransform t;
+  //tf::transformMsgToTF(t_msg, t);
   std::vector<double> j_ik = g_pose;
   if (g_actual_js.position.size() >= 7)
   {
     for (int i = 0; i < 7; i++)
       j_ik[i] = g_actual_js.position[i];
   }
-  tf::StampedTransform t_target_in_torso(g_target_origin * t, ros::Time::now(),
-                                         "torso_link", "ik_target");
+  //t.setRotation(t.getRotation() * btQuaternion(0, 0, 0));
   //t_target_in_torso = g_target_origin * t;
+  try
+  {
+    g_tf_listener->lookupTransform("torso_link", "human_tool_link",
+                                   ros::Time(0), t);
+  }
+  catch (tf::TransformException ex)
+  {
+    ROS_ERROR("%s", ex.what());
+    return;
+  }
+
+  tf::StampedTransform t_target_in_torso(g_target_origin * t, ros::Time::now(),
+                                         "world", "ik_target");
 
   geometry_msgs::TransformStamped target_trans_msg;
   /*
@@ -118,6 +131,12 @@ void target_cb(const geometry_msgs::Transform &t_msg)
 
   tf::transformStampedTFToMsg(t_target_in_torso, target_trans_msg);
   g_tf_broadcaster->sendTransform(target_trans_msg);
+
+  tf::StampedTransform t_target_origin(g_target_origin, ros::Time::now(),
+                                         "torso_link", "target_origin");
+  geometry_msgs::TransformStamped target_origin_msg;
+  tf::transformStampedTFToMsg(t_target_origin, target_origin_msg);
+  g_tf_broadcaster->sendTransform(target_origin_msg);
 
   ik_tool(g_target_origin * t, j_ik);
   g_js.header.stamp = ros::Time::now();
@@ -158,7 +177,9 @@ int main(int argc, char **argv)
   ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("target_joints", 1);
   g_joint_pub = &joint_pub; // ugly ugly
   tf::TransformBroadcaster tf_broadcaster;
+  tf::TransformListener tf_listener;
   g_tf_broadcaster = &tf_broadcaster;
+  g_tf_listener = &tf_listener;
   ros::Rate loop_rate(20);
   geometry_msgs::TransformStamped world_trans;
   world_trans.header.frame_id = "world";
@@ -220,10 +241,11 @@ int main(int argc, char **argv)
   //double d_pose = 0, d_pose_inc = 0.01;
 
   // set origin to be something we can comfortably reach
-  g_target_origin = fk_tool(g_pose);
-  btQuaternion target_quat;
-  target_quat.setEuler(1.57, -1.57, 0);
-  g_target_origin.setRotation(target_quat);
+  //g_target_origin = fk_tool(g_pose);
+  //btQuaternion target_quat;
+  //target_quat.setEuler(1.57, -1.57, 0);
+  //g_target_origin.setRotation(target_quat);
+  g_target_origin = btTransform(btQuaternion::getIdentity(), btVector3(0, 0.1, 0));
   //tf::Transform(btQuaternion::getIdentity(), btVector3(0, 0, 0));
 
   while (ros::ok())
