@@ -9,7 +9,7 @@
     <param name="dev" value="/dev/input/js1"/>
   </node>
 -->
-  <param name="robot_description" textfile="$(find openarms)/urdf/oa6.xml"/>
+  <param name="robot_description" textfile="$(find openarms)/urdf/oa9.xml"/>
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
   <!--<node name="oa_state" pkg="openarms" type="oa-state"/>-->
   <node name="rviz" pkg="rviz" type="rviz"/>
