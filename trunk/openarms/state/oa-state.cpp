@@ -28,35 +28,47 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
   g_joint_pos[2] = (sensors->pos[2] - g_stepper_offsets[2]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 14;
   g_joint_pos[3] = (sensors->pos[3] - g_stepper_offsets[3]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 14 - 1.57; // assume we init with elbow straight down
 
-  const int32_t WRAP_THRESH = 30, NOT_IN_WRAP_THRESH = 60;
+  const int32_t DEADBAND_WIDTH = 8;
+  const int32_t WRAP_THRESH_LOW = DEADBAND_WIDTH;
+  const int32_t WRAP_THRESH_HIGH = 1023 - DEADBAND_WIDTH;
   for (int i = 0; i < 3; i++)
   {
     int32_t pos = sensors->pos[i+4];
-    if (pos < WRAP_THRESH)
+    if (pos < WRAP_THRESH_LOW)
     {
       if (g_servo_in_wrap[i] == COMING_FROM_HIGH)
         g_servo_wraps[i]++;
       g_servo_in_wrap[i] = COMING_FROM_LOW;
     }
-    else if (pos > 1024 - WRAP_THRESH)
+    else if (pos > WRAP_THRESH_HIGH)
     {
       if (g_servo_in_wrap[i] == COMING_FROM_LOW)
         g_servo_wraps[i]--;
       g_servo_in_wrap[i] = COMING_FROM_HIGH;
     }
-    else if ((pos >= WRAP_THRESH && pos < NOT_IN_WRAP_THRESH) ||
-             (pos > 1024 - NOT_IN_WRAP_THRESH && pos <= 1024 - WRAP_THRESH))
+    else if  (pos < WRAP_THRESH_LOW + DEADBAND_WIDTH ||
+              pos > WRAP_THRESH_HIGH - DEADBAND_WIDTH)
     {
       g_servo_in_wrap[i] = NOT_IN_WRAP;
     }
-    if (g_servo_in_wrap[i] != NOT_IN_WRAP &&
-        (pos > NOT_IN_WRAP_THRESH && pos < 1024 - NOT_IN_WRAP_THRESH))
+    else if (g_servo_in_wrap[i] != NOT_IN_WRAP)
     {
+      // we're in the dead band scratch zone. 
       if (g_servo_in_wrap[i] == COMING_FROM_HIGH)
         pos = 1023;
       else
         pos = 0;
     }
+/*
+    if (g_servo_in_wrap[i] == COMING_FROM_HIGH)
+    {
+      if (pos > WRAP_THRESH_LOW
+    }
+    if (g_servo_in_wrap[i] != NOT_IN_WRAP &&
+        (pos > NOT_IN_WRAP_THRESH && pos < 1024 - NOT_IN_WRAP_THRESH))
+    {
+    }
+*/
     g_joint_pos[i+4] = (pos - g_servo_offsets[i] + 1024 * g_servo_wraps[i]) * 2 * 3.1415 / 1023.0 / 2.8;
     /*
     if (i == 1)
@@ -66,6 +78,18 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
              g_joint_pos[i+4]);
     */
   }
+  // wrist pitch. enforce joint limits on wrap count
+  if (g_joint_pos[5] < -2.2)
+  {
+    ROS_ERROR("woah, wrist overwrap negative");
+    g_servo_wraps[1]++;
+  }
+  else if (g_joint_pos[5] > 2.4)
+  {
+    ROS_ERROR("woah, wrist overwrap positive");
+    g_servo_wraps[1]--;
+  }
+
   // handle the gripper now
   g_joint_pos[7] = (sensors->pos[7] - 216) / (371.0 - 216.0);
   // assume servos are all geared down 3:1
