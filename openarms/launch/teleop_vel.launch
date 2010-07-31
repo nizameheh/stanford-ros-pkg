@@ -11,5 +11,7 @@
     <remap from="joy" to="joy_2"/>
     <param name="dev" value="/dev/input/js2"/>
   </node>
-  <node name="teleop_vel" pkg="openarms" type="teleop_vel"/>
+  <node name="teleop_vel" pkg="openarms" type="teleop_vel">
+    <remap from="arm_actuators_buttons" to="/spacepoint4_buttons"/>
+  </node>
 </launch>

@@ -5,11 +5,13 @@ import rospy, sys
 from joy.msg import Joy
 from sensor_msgs.msg import JointState
 from openarms.msg import ArmActuators
+from std_msgs.msg import UInt8
 
 g_stepper_vel = [0,0,0,0]
 g_servo_torque = [0,0,0,0]
 g_autopilot = False
 g_autopilot_act = None
+g_button_act = 0
 
 if __name__ == '__main__':
   def joy_update_0(msg):
@@ -36,10 +38,10 @@ if __name__ == '__main__':
   def joy_update_2(msg):
     global g_servo_torque
     global g_autopilot
+    g_servo_torque[3] = msg.axes[1] * 1023.0
     if not g_autopilot:
       if len(msg.axes) >= 3:
         g_servo_torque[2] = msg.axes[0] * 1023.0
-        g_servo_torque[3] = msg.axes[1] * 1023.0
     if msg.axes[2] > 0.7:
       g_autopilot = True
     else:
@@ -49,11 +51,16 @@ if __name__ == '__main__':
     global g_autopilot_act
     g_autopilot_act = msg
 
+  def button_cb(msg):
+    global g_button_act
+    g_button_act = msg.data
+
   pub_act = rospy.Publisher('arm_actuators', ArmActuators)
   sub_0 = rospy.Subscriber('joy_0', Joy, joy_update_0)
   sub_1 = rospy.Subscriber('joy_1', Joy, joy_update_1)
   sub_2 = rospy.Subscriber('joy_2', Joy, joy_update_2)
   sub_act = rospy.Subscriber('arm_actuators_autopilot', ArmActuators, act_cb)
+  sub_buttons = rospy.Subscriber('arm_actuators_buttons', UInt8, button_cb)
   rospy.init_node('teleop_vel')
   r = rospy.Rate(100)
   g_autopilot_act = ArmActuators()
@@ -61,12 +68,24 @@ if __name__ == '__main__':
   g_autopilot_act.servo_torque = [0,0,0,0]
   #joint_tgt = JointState()
   act = ArmActuators()
+  gripper_torque = 0
   while not rospy.is_shutdown():
     if not g_autopilot:
       act.stepper_vel = g_stepper_vel
       act.servo_torque = g_servo_torque
       pub_act.publish(act)
     else:
+      if g_button_act == 1:
+        gripper_torque = 500
+      elif g_button_act == 2:
+        gripper_torque = -500
+      else:
+        gripper_torque = 0
+      #if gripper_torque > 800:
+      #  gripper_torque = 800
+      #elif gripper_torque < -800:
+      #  gripper_torque = -800
+      g_autopilot_act.servo_torque = [g_autopilot_act.servo_torque[0], g_autopilot_act.servo_torque[1], g_autopilot_act.servo_torque[2], gripper_torque] #g_servo_torque[3]]
       pub_act.publish(g_autopilot_act)
     r.sleep()
 

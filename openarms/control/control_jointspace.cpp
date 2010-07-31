@@ -61,6 +61,17 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
           g_actuators.stepper_vel[i] = MAX_VEL;
         else if (g_actuators.stepper_vel[i] < -MAX_VEL)
           g_actuators.stepper_vel[i] = -MAX_VEL;
+        if (abs(g_actuators.stepper_vel[i]) < 20)
+          g_actuators.stepper_vel[i] = 0;
+        /*
+        if (abs(g_actuators.stepper_vel[i]) < 15)
+        {
+          if (g_actuators.stepper_vel[i] > 0)
+            g_actuators.stepper_vel[i] = 10;
+          else
+            g_actuators.stepper_vel[i] = -10;
+        }
+        */
       }
       for (int i = 4; i < 8; i++)
       {

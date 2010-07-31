@@ -72,6 +72,9 @@ bool ik_tool(tf::Transform t, std::vector<double> &joints)
   KDL::JntArray q_init(7), q(7);
   for (int i = 0; i < 7; i++)
     q_init.data[i] = joints[i];
+  q_init.data[1] += 0.5 * (-0.7 - joints[1]);
+  q_init.data[2] += 0.5 * (-0.7 - joints[2]);
+  q_init.data[3] += 0.5 * (-0.1 - joints[3]);
   // populate F_dest from tf::Transform parameter
   KDL::Frame F_dest;
   tf::TransformTFToKDL(t, F_dest);

@@ -397,7 +397,7 @@ int main(int argc, char **argv)
   }
   g_serial = s;
   ros::Subscriber sub = n.subscribe("arm_actuators", 1, actuators_cb);
-  ros::Publisher pub = n.advertise<openarms::ArmSensors>("arm_sensors",1);
+  ros::Publisher pub = n.advertise<openarms::ArmSensors>("arm_sensors",100);
   ros::Time t_prev = ros::Time::now(), t_wholearm = ros::Time::now();
   for (int i = 0; i < 4; i++)
   {
@@ -430,23 +430,17 @@ int main(int argc, char **argv)
     if (nread)
     {
       for (int i = 0; i < nread; i++)
-      {
-        //printf("    %x\n", read_buf[i]);
         if (process_byte(read_buf[i], &pub))
-        {
           replied = true;
-          ros::spinOnce();
-        }
-      }
     }
     else
-      ros::Duration(0.0001).sleep();
-    ros::spinOnce();
+      ros::Duration(0.00001).sleep();
     // blast status-request packets periodically
     ros::Time t = ros::Time::now();
     if ((t - t_prev).toSec() > 0.05 || replied)
         //((t - t_prev).toSec() > 0.001 && replied))
     {
+      ros::spinOnce();
       //printf("%d\n", scheduled);
       replied = false;
       //enable_led(11, even ? 1 : 0);
