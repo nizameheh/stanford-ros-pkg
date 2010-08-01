@@ -25,7 +25,8 @@ int main(int argc, char **argv)
   tcsetattr(0, TCSANOW, &raw);
   puts("greetings. ctrl-c to exit.");
   //tf::Transform t(btQuaternion::getIdentity(), btVector3(0, 0, 0));
-  btVector3 target_vec(0, 0, 0);
+  btVector3 target_vec(0, 0.3, -0.2);
+  btQuaternion target_quat(btQuaternion::getIdentity());
   geometry_msgs::Transform tf_msg;
 
   const double DELTA = 0.01;
@@ -43,7 +44,6 @@ int main(int argc, char **argv)
     switch (c)
     {
       case 'a':
-        //t.pose.setX(1);
         target_vec.setX(target_vec.x() - DELTA);
         break;
       case 'x':
