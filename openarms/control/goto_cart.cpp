@@ -10,6 +10,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/LU>
+#include <Eigen/SVD>
 #include "robot_state_publisher/treefksolverposfull_recursive.hpp"
 #include <string>
 #include <map>
@@ -18,11 +19,14 @@
 #include <kdl/chainiksolverpos_nr_jl.hpp>
 #include <kdl/chainiksolvervel_pinv.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
+#include <kdl/jacobian.hpp>
 #include "geometry_msgs/Transform.h"
+#include <cstdio>
 using std::string;
 using std::map;
 using std::make_pair;
 using namespace Eigen;
+using namespace std;
 
 sensor_msgs::JointState g_js, g_actual_js;
 ros::Publisher *g_joint_pub = NULL;
@@ -30,9 +34,10 @@ tf::TransformBroadcaster *g_tf_broadcaster = NULL;
 tf::TransformListener *g_tf_listener = NULL;
 KDL::TreeFkSolverPosFull_recursive *g_fk_solver = NULL;
 KDL::ChainIkSolverPos_NR_JL *g_ik_solver = NULL;
+KDL::ChainJntToJacSolver *g_jac_solver = NULL;
 tf::Transform /*g_target_origin, */g_target;
 std::vector<double> g_pose;
-
+double g_posture_gain = 0;
 
 tf::Transform fk_tool(const std::vector<double> &x) // joint angles 
 {
@@ -85,6 +90,19 @@ bool ik_tool(tf::Transform t, std::vector<double> &joints)
     ROS_ERROR("ik solver fail");
     return false;
   }
+
+  KDL::Jacobian jac(7);
+  g_jac_solver->JntToJac(q, jac);
+  printf("jacobian: %d x %d\n", jac.data.transpose().rows(), jac.data.transpose().cols());
+  //SVD< Eigen::Matrix<double, 7, Eigen::Dynamic> > svd(jac.data.transpose());
+  SVD< Eigen::MatrixXd > svd(jac.data.transpose());
+  printf("%d singular values\n", svd.singularValues().size());
+  //for (int i = 0; i < 7; i++)
+  //  printf("%d:  %f\n", i, svd.singularValues()(i));
+
+  //cout << jac.data << endl << endl;
+
+
   for (int i = 0; i < 7; i++)
     joints[i] = q.data[i];
   return true;
@@ -156,6 +174,7 @@ void target_cb(const geometry_msgs::Transform &t_msg)
 */
 //  ik_tool(g_target_origin * t, j_ik);
   ik_tool(t, j_ik);
+
   g_js.header.stamp = ros::Time::now();
   g_js.position = j_ik;
   g_joint_pub->publish(g_js);
@@ -243,6 +262,9 @@ int main(int argc, char **argv)
                                             100, 1e-6);
   //KDL::ChainIkSolverPos_NR ik_solver_pos(chain, fk_solver_chain, ik_solver_vel, 100, 1e-6);
   g_ik_solver = &ik_solver_pos;
+
+  KDL::ChainJntToJacSolver jac_solver(chain);
+  g_jac_solver = &jac_solver;
 
   //boost::scoped_ptr<KDL::TreeFkSolverPosFull_recursive> fk_solver;
 
