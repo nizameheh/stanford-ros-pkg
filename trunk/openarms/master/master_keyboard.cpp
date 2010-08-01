@@ -25,8 +25,8 @@ int main(int argc, char **argv)
   tcsetattr(0, TCSANOW, &raw);
   puts("greetings. ctrl-c to exit.");
   //tf::Transform t(btQuaternion::getIdentity(), btVector3(0, 0, 0));
-  btVector3 target_vec(0, 0.3, -0.2);
-  btQuaternion target_quat(btQuaternion::getIdentity());
+  btVector3 target_vec(0, 0.45, -0.2);
+  btQuaternion target_quat(btQuaternion(btVector3(1, 0, 0), 3.14));
   geometry_msgs::Transform tf_msg;
 
   const double DELTA = 0.01, QUAT_DELTA = 0.05;
