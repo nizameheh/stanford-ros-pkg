@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   btQuaternion target_quat(btQuaternion::getIdentity());
   geometry_msgs::Transform tf_msg;
 
-  const double DELTA = 0.01;
+  const double DELTA = 0.01, QUAT_DELTA = 0.05;
   
   while (ros::ok())
   {
@@ -61,11 +61,28 @@ int main(int argc, char **argv)
       case 'z':
         target_vec.setZ(target_vec.z() - DELTA);
         break;
+      case 'j':
+        target_quat *= btQuaternion(btVector3(1, 0, 0), QUAT_DELTA);
+        break;
+      case 'l':
+        target_quat *= btQuaternion(btVector3(1, 0, 0), -QUAT_DELTA);
+        break;
+      case 'i':
+        target_quat *= btQuaternion(btVector3(0, 1, 0), QUAT_DELTA);
+        break;
+      case ',':
+        target_quat *= btQuaternion(btVector3(0, 1, 0), -QUAT_DELTA);
+        break;
+      case 'u':
+        target_quat *= btQuaternion(btVector3(0, 0, 1), QUAT_DELTA);
+        break;
+      case 'm':
+        target_quat *= btQuaternion(btVector3(0, 0, 1), -QUAT_DELTA);
+        break;
       default:
         break;
     }
-    tf::transformTFToMsg(tf::Transform(btQuaternion::getIdentity(), target_vec),
-                         tf_msg);
+    tf::transformTFToMsg(tf::Transform(target_quat, target_vec), tf_msg);
     tf_pub.publish(tf_msg);
   }
   tcsetattr(0, TCSADRAIN, &cooked);
