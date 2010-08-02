@@ -37,7 +37,7 @@ KDL::ChainIkSolverPos_NR_JL *g_ik_solver = NULL;
 KDL::ChainJntToJacSolver *g_jac_solver = NULL;
 tf::Transform /*g_target_origin, */g_target;
 std::vector<double> g_pose;
-double g_posture_gain = 0;
+double g_posture_gain = 0.1;
 
 tf::Transform fk_tool(const std::vector<double> &x) // joint angles 
 {
@@ -77,11 +77,13 @@ bool ik_tool(tf::Transform t, std::vector<double> &joints)
   KDL::JntArray q_init(7), q(7);
   for (int i = 0; i < 7; i++)
     q_init.data[i] = joints[i];
+  /*
   const double POSE_GAIN = 0.1;
   q_init.data[1] += POSE_GAIN * (0.7 - joints[1]);
   q_init.data[2] += POSE_GAIN * (0 - joints[2]);
   q_init.data[3] += POSE_GAIN * (-0.1 - joints[3]);
   q_init.data[4] += POSE_GAIN * (0 - joints[4]);
+  */
   // populate F_dest from tf::Transform parameter
   KDL::Frame F_dest;
   tf::TransformTFToKDL(t, F_dest);
@@ -95,16 +97,25 @@ bool ik_tool(tf::Transform t, std::vector<double> &joints)
   g_jac_solver->JntToJac(q, jac);
   printf("jacobian: %d x %d\n", jac.data.transpose().rows(), jac.data.transpose().cols());
   //SVD< Eigen::Matrix<double, 7, Eigen::Dynamic> > svd(jac.data.transpose());
-  SVD< Eigen::MatrixXd > svd(jac.data.transpose());
+  MatrixXd jac_padded(7, 7);
+  for (int i = 0; i < 7; i++)
+    for (int j = 0; j < 7; j++)
+    {
+      if (j < 6)
+        jac_padded(i, j) = jac(j, i);
+      else
+        jac_padded(i, j) = 0;
+    }
+  SVD< Eigen::MatrixXd > svd(jac_padded);
   printf("%d singular values\n", svd.singularValues().size());
-  //for (int i = 0; i < 7; i++)
-  //  printf("%d:  %f\n", i, svd.singularValues()(i));
+  for (int i = 0; i < svd.singularValues().size(); i++)
+    printf("%d:  %f\n", i, svd.singularValues()(i));
 
   //cout << jac.data << endl << endl;
-
+  cout << svd.matrixU() << endl << endl;
 
   for (int i = 0; i < 7; i++)
-    joints[i] = q.data[i];
+    joints[i] = q.data[i] - g_posture_gain * svd.matrixU()(i, 6);
   return true;
 }
 
