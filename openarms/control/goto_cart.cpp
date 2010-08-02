@@ -6,6 +6,7 @@
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_kdl.h>
 #include "openarms/ArmSensors.h"
+#include "openarms/ArmIKRequest.h"
 #include "wiimote/State.h"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -37,7 +38,9 @@ KDL::ChainIkSolverPos_NR_JL *g_ik_solver = NULL;
 KDL::ChainJntToJacSolver *g_jac_solver = NULL;
 tf::Transform /*g_target_origin, */g_target;
 std::vector<double> g_pose;
-double g_posture_gain = 0.1;
+
+const double g_joint_min[7] = {-.7, -2.5, -2, -1.6, -3.14, -1.57, -3.14};
+const double g_joint_max[7] = {1.0,  0  ,  2,  1.0,  3.14,  1.57,  3.14};
 
 tf::Transform fk_tool(const std::vector<double> &x) // joint angles 
 {
@@ -66,7 +69,8 @@ tf::Transform fk_tool(const std::vector<double> &x) // joint angles
   return tf::Transform();
 }
 
-bool ik_tool(tf::Transform t, std::vector<double> &joints)
+bool ik_tool(tf::Transform t, std::vector<double> &joints,
+             double req_posture, double posture_gain)
 {
   // assumes that "joints" coming in is the initial vector
   if (joints.size() != 7)
@@ -114,8 +118,15 @@ bool ik_tool(tf::Transform t, std::vector<double> &joints)
   //cout << jac.data << endl << endl;
   cout << svd.matrixU() << endl << endl;
 
+  // call the robot posture the angle of the shoulder lift joint, normalized
+  // into [0..1] by how far we are from other joint limits. total hack... i'm 
+  // not sure how elite people would do this. (todo)
+  double posture = (q.data[1] - g_joint_min[1]) / (g_joint_max[1] - g_joint_min[1]);
+  printf("posture: %f\n", posture);
+
   for (int i = 0; i < 7; i++)
-    joints[i] = q.data[i] - g_posture_gain * svd.matrixU()(i, 6);
+    joints[i] = q.data[i] + 
+                posture_gain * (req_posture - posture) * svd.matrixU()(i, 6);
   return true;
 }
 
@@ -124,7 +135,7 @@ void joint_cb(const sensor_msgs::JointState &msg)
   g_actual_js = msg;
 }
 
-void target_cb(const geometry_msgs::Transform &t_msg)
+void ik_request_cb(const openarms::ArmIKRequest &req_msg)
 {
   // assume the transform coming in is a delta away from the center 
   // of our workspace (for now, at least)
@@ -132,7 +143,7 @@ void target_cb(const geometry_msgs::Transform &t_msg)
   //                     btVector3(d_pose, 0, 0));
   //tf::Transform t_target = t_tool * t_bump;
   tf::Transform t_input;
-  tf::transformMsgToTF(t_msg, t_input);
+  tf::transformMsgToTF(req_msg.t, t_input);
   tf::StampedTransform t(t_input, ros::Time::now(), "world", "ik_target");
   /*
   tf::StampedTransform t_target_origin(g_target_origin, ros::Time::now(),
@@ -184,7 +195,7 @@ void target_cb(const geometry_msgs::Transform &t_msg)
   g_tf_broadcaster->sendTransform(target_origin_msg);
 */
 //  ik_tool(g_target_origin * t, j_ik);
-  ik_tool(t, j_ik);
+  ik_tool(t, j_ik, req_msg.posture, req_msg.posture_gain);
 
   g_js.header.stamp = ros::Time::now();
   g_js.position = j_ik;
@@ -219,7 +230,7 @@ int main(int argc, char **argv)
   ROS_INFO("parsed tree successfully");
   ///////////////////////////////////////////////////////////////////////
 
-  ros::Subscriber target_sub = n.subscribe("target_frame", 1, target_cb);
+  ros::Subscriber target_sub = n.subscribe("ik_request", 1, ik_request_cb);
   ros::Subscriber joint_sub = n.subscribe("joint_states", 1, joint_cb);
   ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("target_joints", 1);
   g_joint_pub = &joint_pub; // ugly ugly
@@ -254,20 +265,11 @@ int main(int argc, char **argv)
   KDL::ChainFkSolverPos_recursive fk_solver_chain(chain);
   KDL::ChainIkSolverVel_pinv ik_solver_vel(chain);
   KDL::JntArray q_min(7), q_max(7);
-  q_min.data[0] = -.7;
-  q_min.data[1] = -2.5;
-  q_min.data[2] = -2;
-  q_min.data[3] = -1.6;
-  q_min.data[4] = -3.14;
-  q_min.data[5] = -1.57;
-  q_min.data[6] = -3.14;
-  q_max.data[0] = 1.0;
-  q_max.data[1] = 0.0;
-  q_max.data[2] = 2;
-  q_max.data[3] = 1.0;
-  q_max.data[4] = 3.14;
-  q_max.data[5] = 1.57;
-  q_max.data[6] = 3.14;
+  for (int i = 0; i < 7; i++)
+  {
+    q_min.data[i] = g_joint_min[i];
+    q_max.data[i] = g_joint_max[i];
+  }
   KDL::ChainIkSolverPos_NR_JL ik_solver_pos(chain, q_min, q_max,
                                             fk_solver_chain, ik_solver_vel, 
                                             100, 1e-6);

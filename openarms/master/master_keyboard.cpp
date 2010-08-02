@@ -8,6 +8,7 @@
 #include "geometry_msgs/Transform.h"
 #include "LinearMath/btTransform.h"
 #include "tf/transform_datatypes.h"
+#include "openarms/ArmIKRequest.h"
 
 struct termios cooked, raw; // mmm makes me hungry
 
@@ -15,7 +16,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "master_keyboard"); // remember he-man?
   ros::NodeHandle n;
-  ros::Publisher tf_pub = n.advertise<geometry_msgs::Transform>("target_frame", 1);
+  ros::Publisher ik_req_pub = n.advertise<openarms::ArmIKRequest>("ik_request", 1);
   char c;
   tcgetattr(0, &cooked);
   memcpy(&raw, &cooked, sizeof(struct termios));
@@ -25,9 +26,9 @@ int main(int argc, char **argv)
   tcsetattr(0, TCSANOW, &raw);
   puts("greetings. ctrl-c to exit.");
   //tf::Transform t(btQuaternion::getIdentity(), btVector3(0, 0, 0));
-  btVector3 target_vec(0, 0.45, -0.2);
+  btVector3 target_vec(-0.2, 0.45, -0.3);
   btQuaternion target_quat(btQuaternion(btVector3(1, 0, 0), 3.14));
-  geometry_msgs::Transform tf_msg;
+  openarms::ArmIKRequest ik_msg;
 
   const double DELTA = 0.01, QUAT_DELTA = 0.05;
   
@@ -79,11 +80,23 @@ int main(int argc, char **argv)
       case 'm':
         target_quat *= btQuaternion(btVector3(0, 0, 1), -QUAT_DELTA);
         break;
+      case 'p':
+        ik_msg.posture = 0.95;
+        ik_msg.posture_gain = 0.5;
+        break;
+      case '/':
+        ik_msg.posture = 0.05;
+        ik_msg.posture_gain = 0.5;
+        break;
+      case ';':
+        ik_msg.posture = 0.5;
+        ik_msg.posture_gain = 0.0;
+        break;  
       default:
         break;
     }
-    tf::transformTFToMsg(tf::Transform(target_quat, target_vec), tf_msg);
-    tf_pub.publish(tf_msg);
+    tf::transformTFToMsg(tf::Transform(target_quat, target_vec), ik_msg.t);
+    ik_req_pub.publish(ik_msg);
   }
   tcsetattr(0, TCSADRAIN, &cooked);
   printf("bai\n");
