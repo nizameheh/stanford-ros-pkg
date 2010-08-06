@@ -11,6 +11,8 @@
 #include "tf/transform_datatypes.h"
 #include "tf/transform_broadcaster.h"
 #include "tf/transform_listener.h"
+#include "openarms/ArmIKRequest.h"
+#include "std_msgs/UInt8.h"
 using std::vector;
 
 ros::Publisher *g_target_pub = NULL;
@@ -20,7 +22,7 @@ geometry_msgs::Quaternion q0, q1, q2, q3;
 bool init_complete[4];
 ros::Publisher *g_joint_pub = NULL;
 tf::Transform g_workspace_center;
-
+int g_posture_bangbang = 0;
 void q0_cb(const geometry_msgs::Quaternion::ConstPtr &q)
 {
   q0 = *q;
@@ -118,11 +120,33 @@ void q0_cb(const geometry_msgs::Quaternion::ConstPtr &q)
   tf::StampedTransform tool_in_workspace;
   try
   {
+    /*
     g_tf_listener->lookupTransform("workspace_center", "human_tool_link",
+                                   ros::Time(0), tool_in_workspace);
+    */
+
+    g_tf_listener->lookupTransform("world", "human_tool_link",
                                    ros::Time(0), tool_in_workspace);
     geometry_msgs::Transform target_msg;
     tf::transformTFToMsg(tool_in_workspace, target_msg);
-    g_target_pub->publish(target_msg);
+    openarms::ArmIKRequest ik_req_msg;
+    ik_req_msg.t = target_msg;
+    if (g_posture_bangbang == 0)
+    {
+      ik_req_msg.posture = 0.5;
+      ik_req_msg.posture_gain = 0.0;
+    }
+    else if (g_posture_bangbang == 1)
+    {
+      ik_req_msg.posture = 0.05;
+      ik_req_msg.posture_gain = 0.5;
+    }
+    else if (g_posture_bangbang == 2)
+    {
+      ik_req_msg.posture = 0.95;
+      ik_req_msg.posture_gain = 0.5;
+    }
+    g_target_pub->publish(ik_req_msg);
   }
   catch (tf::TransformException ex)
   {
@@ -149,6 +173,11 @@ void q3_cb(const geometry_msgs::Quaternion::ConstPtr &q)
   init_complete[3] = true;
 }
 
+void posture_bangbang_cb(const std_msgs::UInt8::ConstPtr &msg)
+{
+  g_posture_bangbang = msg->data;
+}
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "master_spacepointshirt"); // remember he-man? awesome.
@@ -157,8 +186,9 @@ int main(int argc, char **argv)
   ros::Subscriber q1_sub = n.subscribe("spacepoint2_quat", 1, q1_cb);
   ros::Subscriber q2_sub = n.subscribe("spacepoint3_quat", 1, q2_cb);
   ros::Subscriber q3_sub = n.subscribe("spacepoint4_quat", 1, q3_cb);
+  ros::Subscriber posture_sub = n.subscribe("posture_bangbang", 1, posture_bangbang_cb);
   ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("master_state", 1);
-  ros::Publisher target_pub = n.advertise<geometry_msgs::Transform>("target_frame", 1);
+  ros::Publisher target_pub = n.advertise<openarms::ArmIKRequest>("ik_request", 1);
   g_target_pub = &target_pub;
   g_joint_pub = &joint_pub;
   for (int i = 0; i < 4; i++)

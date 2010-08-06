@@ -23,7 +23,7 @@ if __name__ == '__main__':
       if len(msg.axes) >= 3:
         g_stepper_vel[0] = msg.axes[0] * 2000.0
         g_stepper_vel[1] = msg.axes[1] * 2000.0
-        g_stepper_vel[2] = msg.axes[2] * 8000.0
+        g_stepper_vel[2] = msg.axes[2] * 6000.0
 
   def joy_update_1(msg):
     global g_stepper_vel
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     global g_autopilot
     if not g_autopilot:
       if len(msg.axes) >= 3:
-        g_stepper_vel[3] = msg.axes[0] * 8000.0
+        g_stepper_vel[3] = msg.axes[0] * 6000.0
         g_servo_torque[0] = msg.axes[1] * 1023.0
         g_servo_torque[1] = msg.axes[2] * 1023.0
 

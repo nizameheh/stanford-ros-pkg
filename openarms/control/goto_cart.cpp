@@ -39,8 +39,8 @@ KDL::ChainJntToJacSolver *g_jac_solver = NULL;
 tf::Transform /*g_target_origin, */g_target;
 std::vector<double> g_pose;
 
-const double g_joint_min[7] = {-.7, -2.5, -2, -1.6, -3.14, -1.57, -3.14};
-const double g_joint_max[7] = {1.0,  0  ,  2,  1.0,  3.14,  1.57,  3.14};
+const double g_joint_min[7] = {-1.6, -2.7, -0.9, -2  , -3.14, -1.57, -3.14};
+const double g_joint_max[7] = {   0, -0.4,  4  , 0.83,  3.14,  1.57,  3.14};
 
 tf::Transform fk_tool(const std::vector<double> &x) // joint angles 
 {
@@ -122,7 +122,7 @@ bool ik_tool(tf::Transform t, std::vector<double> &joints,
   // into [0..1] by how far we are from other joint limits. total hack... i'm 
   // not sure how elite people would do this. (todo)
   double posture = (q.data[1] - g_joint_min[1]) / (g_joint_max[1] - g_joint_min[1]);
-  printf("posture: %f\n", posture);
+  printf("posture: %f   req = %f\n", posture, req_posture);
 
   for (int i = 0; i < 7; i++)
     joints[i] = q.data[i] + 
