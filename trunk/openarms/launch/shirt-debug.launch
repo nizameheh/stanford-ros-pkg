@@ -4,5 +4,5 @@
     <remap from="joint_states" to="master_state"/>
     <remap from="robot_description" to="master_description"/>
   </node>
-  <node name="rviz" pkg="rviz" type="rviz"/>
+  <!--<node name="rviz" pkg="rviz" type="rviz"/>-->
 </launch>

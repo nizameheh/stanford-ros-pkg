@@ -15,5 +15,6 @@
   <depend package="robot_state_publisher"/>
   <depend package="sensor_msgs"/>
   <depend package="geometry_msgs"/>
+  <depend package="std_msgs"/>
 </package>
 

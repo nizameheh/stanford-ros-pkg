@@ -100,14 +100,14 @@ bool process_byte(uint8_t b, ros::Publisher *pub)
           //printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
           if (g_rx_state == STEPPER_POS_0)
           {
-            sensors_msg.pos[0] = -pos_0;
-            sensors_msg.pos[1] =  pos_1;
+            sensors_msg.pos[0] =  pos_0;
+            sensors_msg.pos[1] = -pos_1;
             pub->publish(sensors_msg);
           }
           else
           {
-            sensors_msg.pos[3] = -pos_0;
-            sensors_msg.pos[2] =  pos_1;
+            sensors_msg.pos[2] = pos_0;
+            sensors_msg.pos[3] = pos_1;
             //printf("%d: %10u %10u\n", servo_id, pos_0, pos_1);
           }
           return true;
@@ -317,8 +317,10 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
   }
   // flip joints as needed
   openarms::ArmActuators act = *msg;
-  act.stepper_vel[1] *= -1;
+  act.stepper_vel[0] *= -1;
+  //act.stepper_vel[1] *= -1;
   act.stepper_vel[2] *= -1;
+  act.stepper_vel[3] *= -1;
 
   // convert stepper velocities to xmega timer values
   // 32mhz system clock / 64 = 500khz timer clock
@@ -329,11 +331,11 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
       stepper_timers[i] = 0;
     else
     {
-      uint32_t t = 500000 / abs(act.stepper_vel[i]);
+      uint32_t t = 200000 / abs(act.stepper_vel[i]);
       if (t > 0x7fff)
         t = 0x7fff;
-      if (t < 100)
-        t = 100; // don't thrash the mcu with interrupts...
+      if (t < 70)
+        t = 70; // don't thrash the mcu with interrupts...
       stepper_timers[i] = t;
       if (act.stepper_vel[i] < 0)
         stepper_timers[i] |= 0x8000; // high bit = direction
@@ -341,8 +343,8 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
   }
   g_stepper_timers[0] = stepper_timers[0];
   g_stepper_timers[1] = stepper_timers[1];
-  g_stepper_timers[2] = stepper_timers[3];
-  g_stepper_timers[3] = stepper_timers[2];
+  g_stepper_timers[2] = stepper_timers[2];
+  g_stepper_timers[3] = stepper_timers[3];
 
   for (int i = 0; i < 4; i++)
   {
