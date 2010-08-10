@@ -16,5 +16,6 @@
   <depend package="sensor_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="std_msgs"/>
+  <depend package="visualization_msgs"/>
 </package>
 
