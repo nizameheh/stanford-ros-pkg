@@ -38,7 +38,6 @@ volatile uint8_t g_last_byte = 0;
 
 volatile uint8_t g_accel_data[2][8];
 volatile uint8_t g_accel_write_slot = 0;
-volatile int32_t g_encoder = 0;
 
 // this assumes that g_tx_pkt and g_tx_pkt_len have been stuffed
 void send_packet(uint8_t tx_data_len)
@@ -138,13 +137,15 @@ void process_byte(uint8_t b)
             // read data
             uint8_t read_addr = g_rx_param[0];
             uint8_t read_len = g_rx_param[1];
-            if (read_addr == 0x25 && read_len == 4) // return encoder value
+            if (read_addr == 0x25 && read_len == 2) // return encoder value
             {
-              g_tx_pkt[TX_DATA_START  ] = *((uint8_t *)(&g_encoder)  );
-              g_tx_pkt[TX_DATA_START+1] = *((uint8_t *)(&g_encoder)+1);
-              g_tx_pkt[TX_DATA_START+2] = *((uint8_t *)(&g_encoder)+2);
-              g_tx_pkt[TX_DATA_START+3] = *((uint8_t *)(&g_encoder)+3);
-              send_packet(8);
+              uint16_t encoder_latch;
+              cli();
+              encoder_latch = PORTD.IN ; //TCC0.CNT;
+              sei();
+              g_tx_pkt[TX_DATA_START  ] = *((uint8_t *)(&encoder_latch)  );
+              g_tx_pkt[TX_DATA_START+1] = *((uint8_t *)(&encoder_latch)+1);
+              send_packet(2);
             }
             else if (read_addr == 0x2b && read_len == 8) // return accelerometer data
             {
@@ -259,6 +260,21 @@ int main(void)
   PORTD.DIRSET = PIN4_bm | PIN5_bm | PIN7_bm;
   PORTD.OUTSET = PIN4_bm | PIN7_bm;
   SPID.CTRL = SPI_ENABLE_bm | SPI_MODE0_bm | SPI_MODE1_bm | SPI_MASTER_bm | SPI_PRESCALER_DIV64_gc;
+
+  PORTD.DIRCLR = PIN0_bm | PIN1_bm | PIN2_bm;
+
+  PORTD.PIN0CTRL = PORT_ISC_BOTHEDGES_gc; // quadrature index
+  PORTD.PIN1CTRL = PORT_ISC_LEVEL_gc; // quadrature A
+  PORTD.PIN2CTRL = PORT_ISC_LEVEL_gc; // quadrature B
+
+  EVSYS.CH0MUX = EVSYS_CHMUX_PORTD_PIN1_gc; // A & B inputs to quadrature decoder
+  EVSYS.CH1MUX = EVSYS_CHMUX_PORTD_PIN0_gc; // index input to quadrature decoder
+  EVSYS.CH0CTRL = EVSYS_QDEN_bm | EVSYS_QDIEN_bm | EVSYS_DIGFILT_2SAMPLES_gc;
+  EVSYS.CH1CTRL = EVSYS_DIGFILT_2SAMPLES_gc;
+
+  TCC0.CTRLD = TC_EVACT_QDEC_gc;
+  TCC0.PER = 1024 * 4 - 1;
+  TCC0.CTRLA = TC_CLKSEL_DIV1_gc;
 
   sei();
 
