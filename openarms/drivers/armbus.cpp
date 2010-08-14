@@ -15,7 +15,8 @@
 
 LightweightSerial *g_serial = NULL; 
 enum rx_state_t { PING, STEPPER_POS_0, STEPPER_POS_1, STEPPER_ACCEL_1, 
-                SERVO_POS_0, SERVO_POS_1, SERVO_POS_2, SERVO_POS_3} g_rx_state;
+                  SERVO_POS_0, SERVO_POS_1, SERVO_POS_2, SERVO_POS_3,
+                  ELBOW_ENCODER } g_rx_state;
 
 uint16_t g_stepper_timers[4];
 uint16_t g_servo_torques[4], g_servo_dirs[4];
@@ -129,6 +130,16 @@ bool process_byte(uint8_t b, ros::Publisher *pub)
           //printf("%d: %5d\n", servo_id, pos);
           return true;
         }
+        else if (g_rx_state == ELBOW_ENCODER)
+        {
+          uint32_t encoder = (uint32_t) pkt[0]        + 
+                             (uint32_t)(pkt[1] << 8)  +
+                             (uint32_t)(pkt[2] << 16) +
+                             (uint32_t)(pkt[3] << 24);
+          printf("encoder: %+06d\n", encoder);
+          return true;
+        }
+
         else if (g_rx_state == STEPPER_ACCEL_1)
         {
           return true;
@@ -241,6 +252,27 @@ void query_motor(uint8_t id)
   else
   {
     ROS_INFO("woah there. servo id must be in {0,1,2,3}");
+    return;
+  }
+  g_serial->write_block(pkt, 8);
+}
+
+void query_encoder(uint8_t id)
+{
+  uint8_t pkt[20];
+  pkt[0] = 0xff;
+  pkt[1] = 0xff;
+  pkt[2] = id;
+  pkt[3] = 4; // 2 parameters + 2
+  pkt[4] = 0x02; // "read data"
+  pkt[5] = 0x25; // present position + 1 = encoder in my hack of the protocol
+  pkt[6] = 4; // 32-bit integer
+  pkt[7] = calc_checksum(pkt, 7);
+  if (id == 12)
+    g_rx_state = ELBOW_ENCODER;
+  else
+  {
+    ROS_INFO("woah there. encoder id must be in {12}");
     return;
   }
   g_serial->write_block(pkt, 8);
@@ -416,7 +448,7 @@ int main(int argc, char **argv)
   
   uint32_t scheduled = 0;
   bool replied = false;
-  const uint32_t SCH_BEGIN           = 0;
+  const uint32_t SCH_BEGIN           = 7;
   const uint32_t SCH_STEPPER_POS_0   = 0;
   const uint32_t SCH_STEPPER_POS_1   = 1;
   const uint32_t SCH_STEPPER_ACCEL_1 = 2;
@@ -424,7 +456,8 @@ int main(int argc, char **argv)
   const uint32_t SCH_SERVO_1         = 4;
   const uint32_t SCH_SERVO_2         = 5;
   const uint32_t SCH_SERVO_3         = 6;
-  const uint32_t SCH_END             = 6; 
+  const uint32_t SCH_ELBOW_ENCODER   = 7;
+  const uint32_t SCH_END             = 7; 
   while (n.ok())
   {
     uint8_t read_buf[60];
@@ -480,6 +513,10 @@ int main(int argc, char **argv)
       {
         send_torque(3, g_servo_torques[3], g_servo_dirs[3]);
         query_motor(3);
+      }
+      else if (scheduled == SCH_ELBOW_ENCODER)
+      {
+        query_encoder(12);
       }
       if (++scheduled > SCH_END)
       {
