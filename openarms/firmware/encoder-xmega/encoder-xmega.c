@@ -139,9 +139,9 @@ void process_byte(uint8_t b)
             uint8_t read_len = g_rx_param[1];
             if (read_addr == 0x25 && read_len == 2) // return encoder value
             {
-              uint16_t encoder_latch;
+              volatile uint16_t encoder_latch;
               cli();
-              encoder_latch = PORTD.IN ; //TCC0.CNT;
+              encoder_latch = TCC0.CNT;
               sei();
               g_tx_pkt[TX_DATA_START  ] = *((uint8_t *)(&encoder_latch)  );
               g_tx_pkt[TX_DATA_START+1] = *((uint8_t *)(&encoder_latch)+1);
@@ -272,8 +272,8 @@ int main(void)
   EVSYS.CH0CTRL = EVSYS_QDEN_bm | EVSYS_QDIEN_bm | EVSYS_DIGFILT_2SAMPLES_gc;
   EVSYS.CH1CTRL = EVSYS_DIGFILT_2SAMPLES_gc;
 
-  TCC0.CTRLD = TC_EVACT_QDEC_gc;
-  TCC0.PER = 1024 * 4 - 1;
+  TCC0.CTRLD = TC_EVACT_QDEC_gc | TC_EVSEL_CH0_gc;
+  TCC0.PER = 2500 * 4 - 1;
   TCC0.CTRLA = TC_CLKSEL_DIV1_gc;
 
   sei();
@@ -283,9 +283,9 @@ int main(void)
     /*
     _delay_ms(10);
     poll_accel();
-    */
     _delay_ms(200);
     PORTF.OUTTGL = PIN7_bm;
+    */
   }
   return 0; // or not
 }  
