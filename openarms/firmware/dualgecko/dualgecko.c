@@ -21,7 +21,7 @@
 #define TX_DATA_START        5
 #define TX_EXTRA_DELAY_US    10
 
-#define MIN_TIMER_TOP        100
+#define MIN_TIMER_TOP        50
 
 volatile uint8_t g_rx_state = RX_STATE_PREAMBLE_1;
 volatile uint8_t g_rx_id = 0;
@@ -39,6 +39,7 @@ volatile uint16_t g_tgt_vel[2];
 volatile uint16_t g_cur_vel[2];
 volatile uint8_t g_motor_enabled[2];
 volatile uint32_t g_motor_pos[2];
+volatile uint8_t g_motor_dir[2];
 
 volatile uint8_t g_accel_data[2][8];
 volatile uint8_t g_accel_write_slot = 0;
@@ -134,6 +135,7 @@ void process_byte(uint8_t b)
       {
         if (g_rx_id == MY_ID || g_rx_id == 0xfe) // hey! we've got mail!
         {
+          PORTF.OUTTGL = PIN7_bm;
           if (g_rx_instruction == 0x01)
             send_packet(0); // respond to ping
           else if (g_rx_instruction == 0x02)
@@ -160,6 +162,19 @@ void process_byte(uint8_t b)
               for (i = 0; i < 8; i++)
                 g_tx_pkt[TX_DATA_START+i] = g_accel_data[read_slot][i];
               send_packet(8);
+            }
+            else if (read_addr == 0x25 && read_len == 4) // return encoder value
+            {
+              volatile uint16_t encoder_latch[2];
+              cli();
+              encoder_latch[0] = TCD0.CNT;
+              encoder_latch[1] = TCD1.CNT;
+              sei();
+              g_tx_pkt[TX_DATA_START  ] = *((uint8_t *)(&encoder_latch[0])  );
+              g_tx_pkt[TX_DATA_START+1] = *((uint8_t *)(&encoder_latch[0])+1);
+              g_tx_pkt[TX_DATA_START+2] = *((uint8_t *)(&encoder_latch[1])  );
+              g_tx_pkt[TX_DATA_START+3] = *((uint8_t *)(&encoder_latch[1])+1);
+              send_packet(4);
             }
           }
           else if (g_rx_instruction == 0x03)
@@ -193,7 +208,7 @@ void process_byte(uint8_t b)
                 }
                 else // stop timer clock
                   TCE0.CTRLA = TC_CLKSEL_OFF_gc;
-
+/*
                 if (g_rx_param[2] & 0x80)
                   PORTC.OUTSET = PIN2_bm;
                 else
@@ -203,6 +218,9 @@ void process_byte(uint8_t b)
                   PORTE.OUTSET = PIN1_bm;
                 else
                   PORTE.OUTCLR = PIN1_bm;
+*/
+                g_motor_dir[0] = g_rx_param[2] & 0x80;
+                g_motor_dir[1] = g_rx_param[4] & 0x80;
               }
             }
             else if (g_rx_length == 5) // 16-bit write
@@ -274,18 +292,39 @@ ISR(USARTF0_TXC_vect)
 // harrr count yer steps
 ISR(TCC0_CCA_vect)
 {
-  if (PORTC.IN & 0x04)
-    g_motor_pos[0]++;
-  else
-    g_motor_pos[0]--;
+  if (PORTC.OUT & 0x01) // leading edge: latch for step count
+  {
+    if (PORTC.OUT & 0x04)
+      g_motor_pos[0]++;
+    else
+      g_motor_pos[0]--;
+  }
+  else                  // trailing edge: set next step direction
+  {
+    // update the direction output pin
+    if (g_motor_dir[0])
+      PORTC.OUTSET = PIN2_bm;
+    else
+      PORTC.OUTCLR = PIN2_bm;
+  }
 }
 
 ISR(TCE0_CCA_vect)
 {
-  if (PORTE.IN & 0x02)
-    g_motor_pos[1]++;
-  else
-    g_motor_pos[1]--;
+  if (PORTE.OUT & 0x01) // leading edge: latch for step count
+  {
+    if (PORTE.OUT & 0x02)
+      g_motor_pos[1]++;
+    else
+      g_motor_pos[1]--;
+  }
+  else                  // trailing edge: set next step direction
+  {
+    if (g_motor_dir[1])
+      PORTE.OUTSET = PIN1_bm;
+    else
+      PORTE.OUTCLR = PIN1_bm;
+  }
 }
 
 void uart_init()
@@ -361,7 +400,34 @@ int main(void)
   PORTD.OUTSET = PIN4_bm | PIN7_bm;
   SPID.CTRL = SPI_ENABLE_bm | SPI_MODE0_bm | SPI_MODE1_bm | SPI_MASTER_bm | SPI_PRESCALER_DIV64_gc;
 
+  PORTC.DIRCLR = PIN3_bm | PIN4_bm | PIN5_bm;
+  PORTD.DIRCLR = PIN0_bm | PIN1_bm | PIN2_bm;
 
+  PORTC.PIN3CTRL = PORT_ISC_BOTHEDGES_gc; // quadrature index
+  PORTC.PIN4CTRL = PORT_ISC_LEVEL_gc; // quadrature A
+  PORTC.PIN5CTRL = PORT_ISC_LEVEL_gc; // quadrature B
+
+  PORTD.PIN0CTRL = PORT_ISC_BOTHEDGES_gc; // quadrature index
+  PORTD.PIN1CTRL = PORT_ISC_LEVEL_gc; // quadrature A
+  PORTD.PIN2CTRL = PORT_ISC_LEVEL_gc; // quadrature B
+
+  EVSYS.CH0MUX = EVSYS_CHMUX_PORTD_PIN1_gc; // A & B inputs to quadrature decoder
+  EVSYS.CH1MUX = EVSYS_CHMUX_PORTD_PIN0_gc; // index input to quadrature decoder
+  EVSYS.CH0CTRL = EVSYS_QDEN_bm | EVSYS_QDIEN_bm | EVSYS_DIGFILT_2SAMPLES_gc;
+  EVSYS.CH1CTRL = EVSYS_DIGFILT_2SAMPLES_gc;
+
+  EVSYS.CH2MUX = EVSYS_CHMUX_PORTC_PIN4_gc; // A & B inputs to quadrature decoder
+  EVSYS.CH3MUX = EVSYS_CHMUX_PORTC_PIN3_gc; // index input to quadrature decoder
+  EVSYS.CH2CTRL = EVSYS_QDEN_bm | EVSYS_QDIEN_bm | EVSYS_DIGFILT_2SAMPLES_gc;
+  EVSYS.CH3CTRL = EVSYS_DIGFILT_2SAMPLES_gc;
+  
+  TCD0.CTRLD = TC_EVACT_QDEC_gc | TC_EVSEL_CH0_gc;
+  TCD0.PER = 2500 * 4 - 1;
+  TCD0.CTRLA = TC_CLKSEL_DIV1_gc;
+
+  TCD1.CTRLD = TC_EVACT_QDEC_gc | TC_EVSEL_CH2_gc;
+  TCD1.PER = 2500 * 4 - 1;
+  TCD1.CTRLA = TC_CLKSEL_DIV1_gc;
   sei();
 
   while(1)
