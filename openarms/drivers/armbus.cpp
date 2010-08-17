@@ -16,7 +16,8 @@
 LightweightSerial *g_serial = NULL; 
 enum rx_state_t { PING, STEPPER_POS_0, STEPPER_POS_1, STEPPER_ACCEL_1, 
                   SERVO_POS_0, SERVO_POS_1, SERVO_POS_2, SERVO_POS_3,
-                  ELBOW_ENCODER } g_rx_state;
+                  ELBOW_ENCODER,
+                  STEPPER_ENCODER_0, STEPPER_ENCODER_1 } g_rx_state;
 
 uint16_t g_stepper_timers[4];
 uint16_t g_servo_torques[4], g_servo_dirs[4];
@@ -130,13 +131,32 @@ bool process_byte(uint8_t b, ros::Publisher *pub)
           //printf("%d: %5d\n", servo_id, pos);
           return true;
         }
+        else if (g_rx_state == STEPPER_ENCODER_0)
+        {
+          uint16_t encoder_0 = (uint32_t) pkt[0]        + 
+                               (uint32_t)(pkt[1] << 8);
+          uint16_t encoder_1 = (uint32_t) pkt[2]        + 
+                               (uint32_t)(pkt[3] << 8);
+          //printf("encoders 10: %06d  %06d\n", encoder_0, encoder_1);
+          sensors_msg.encoder[0] = encoder_0;
+          return true;
+        }
+        else if (g_rx_state == STEPPER_ENCODER_1)
+        {
+          uint16_t encoder_0 = (uint32_t) pkt[0]        + 
+                               (uint32_t)(pkt[1] << 8);
+          uint16_t encoder_1 = (uint32_t) pkt[2]        + 
+                               (uint32_t)(pkt[3] << 8);
+          printf("encoders 11: %06d  %06d\n", encoder_0, encoder_1);
+          sensors_msg.encoder[1] = encoder_0;
+          sensors_msg.encoder[2] = encoder_1;
+          return true;
+        }
         else if (g_rx_state == ELBOW_ENCODER)
         {
-          uint32_t encoder = (uint32_t) pkt[0]        + 
-                             (uint32_t)(pkt[1] << 8)  +
-                             (uint32_t)(pkt[2] << 16) +
-                             (uint32_t)(pkt[3] << 24);
-          printf("encoder: %+06d\n", encoder);
+          uint16_t encoder = (uint32_t) pkt[0]        + 
+                             (uint32_t)(pkt[1] << 8);
+          sensors_msg.encoder[3] = encoder;
           return true;
         }
 
@@ -257,7 +277,7 @@ void query_motor(uint8_t id)
   g_serial->write_block(pkt, 8);
 }
 
-void query_encoder(uint8_t id)
+void query_encoder(uint8_t id, uint8_t encoder_count = 1)
 {
   uint8_t pkt[20];
   pkt[0] = 0xff;
@@ -266,9 +286,13 @@ void query_encoder(uint8_t id)
   pkt[3] = 4; // 2 parameters + 2
   pkt[4] = 0x02; // "read data"
   pkt[5] = 0x25; // present position + 1 = encoder in my hack of the protocol
-  pkt[6] = 4; // 32-bit integer
+  pkt[6] = (encoder_count == 1 ? 2 : 4); // 16-bit or 32-bit word
   pkt[7] = calc_checksum(pkt, 7);
-  if (id == 12)
+  if (id == 10)
+    g_rx_state = STEPPER_ENCODER_0;
+  else if (id == 11)
+    g_rx_state = STEPPER_ENCODER_1;
+  else if (id == 12)
     g_rx_state = ELBOW_ENCODER;
   else
   {
@@ -289,9 +313,9 @@ void query_stepper_positions(uint8_t id)
   pkt[5] = 0x24; // present position
   pkt[6] = 8; // 32 bits from both steppers
   pkt[7] = calc_checksum(pkt, 7);
-  if (id == 11)
+  if (id == 10)
     g_rx_state = STEPPER_POS_0;
-  else if (id == 10)
+  else if (id == 11)
     g_rx_state = STEPPER_POS_1;
   else
   {
@@ -312,9 +336,9 @@ void query_accelerometer(uint8_t id)
   pkt[5] = 0x2b; // "temperature" aka accelerometer
   pkt[6] = 8; // 8 bytes for now (version, X, Y, Z, temperature)
   pkt[7] = calc_checksum(pkt, 7);
-  if (id != 10)
+  if (id != 11)
   {
-    ROS_INFO("woah. only stepper id 10 has an accelerometer");
+    ROS_INFO("woah. only stepper id 11 has an accelerometer");
     return;
   }
   g_rx_state = STEPPER_ACCEL_1;
@@ -441,6 +465,7 @@ int main(int argc, char **argv)
   }
   //ros::spin();
   sensors_msg.pos.resize(8);
+  sensors_msg.encoder.resize(4);
   send_stepper_vel(10, 0, 0); // stop em
   send_stepper_vel(11, 0, 0); // stop em
   enable_motor(10, 1); // power em up
@@ -448,16 +473,18 @@ int main(int argc, char **argv)
   
   uint32_t scheduled = 0;
   bool replied = false;
-  const uint32_t SCH_BEGIN           = 7;
-  const uint32_t SCH_STEPPER_POS_0   = 0;
-  const uint32_t SCH_STEPPER_POS_1   = 1;
-  const uint32_t SCH_STEPPER_ACCEL_1 = 2;
-  const uint32_t SCH_SERVO_0         = 3;
-  const uint32_t SCH_SERVO_1         = 4;
-  const uint32_t SCH_SERVO_2         = 5;
-  const uint32_t SCH_SERVO_3         = 6;
-  const uint32_t SCH_ELBOW_ENCODER   = 7;
-  const uint32_t SCH_END             = 7; 
+  const uint32_t SCH_BEGIN             = 0;
+  const uint32_t SCH_STEPPER_POS_0     = 0;
+  const uint32_t SCH_STEPPER_POS_1     = 1;
+  const uint32_t SCH_STEPPER_ACCEL_1   = 2;
+  const uint32_t SCH_SERVO_0           = 3;
+  const uint32_t SCH_SERVO_1           = 4;
+  const uint32_t SCH_SERVO_2           = 5;
+  const uint32_t SCH_SERVO_3           = 6;
+  const uint32_t SCH_ELBOW_ENCODER     = 7;
+  const uint32_t SCH_STEPPER_ENCODER_0 = 8;
+  const uint32_t SCH_STEPPER_ENCODER_1 = 9;
+  const uint32_t SCH_END               = 9; 
   while (n.ok())
   {
     uint8_t read_buf[60];
@@ -483,17 +510,21 @@ int main(int argc, char **argv)
       //send_stepper_vel(11, 0x7fff, 0x7fff);
       if (scheduled == SCH_STEPPER_POS_0)
       {
-        send_stepper_vel(11, g_stepper_timers[0], g_stepper_timers[1]);
-        query_stepper_positions(11);
+        send_stepper_vel(10, g_stepper_timers[0], g_stepper_timers[1]);
+        query_stepper_positions(10);
       }
       else if (scheduled == SCH_STEPPER_POS_1)
       {
         //printf("stepper 1 send\n");
-        send_stepper_vel(10, g_stepper_timers[2], g_stepper_timers[3]);
-        query_stepper_positions(10);
+        send_stepper_vel(11, g_stepper_timers[2], g_stepper_timers[3]);
+        query_stepper_positions(11);
       }
+      else if (scheduled == SCH_STEPPER_ENCODER_0)
+        query_encoder(10, 2);
+      else if (scheduled == SCH_STEPPER_ENCODER_1)
+        query_encoder(11, 2);
       else if (scheduled == SCH_STEPPER_ACCEL_1)
-        query_accelerometer(10);
+        query_accelerometer(11);
       else if (scheduled == SCH_SERVO_0)
       {
         send_torque(0, g_servo_torques[0], g_servo_dirs[0]);
@@ -515,9 +546,7 @@ int main(int argc, char **argv)
         query_motor(3);
       }
       else if (scheduled == SCH_ELBOW_ENCODER)
-      {
         query_encoder(12);
-      }
       if (++scheduled > SCH_END)
       {
         double d_wholearm = (t - t_wholearm).toSec();
