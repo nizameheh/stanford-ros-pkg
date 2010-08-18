@@ -292,7 +292,7 @@ ISR(USARTF0_TXC_vect)
 // harrr count yer steps
 ISR(TCC0_CCA_vect)
 {
-  if (PORTC.OUT & 0x01) // leading edge: latch for step count
+  if (PORTC.IN & 0x01) // leading edge: latch for step count
   {
     if (PORTC.OUT & 0x04)
       g_motor_pos[0]++;
@@ -311,7 +311,7 @@ ISR(TCC0_CCA_vect)
 
 ISR(TCE0_CCA_vect)
 {
-  if (PORTE.OUT & 0x01) // leading edge: latch for step count
+  if (PORTE.IN & 0x01) // leading edge: latch for step count
   {
     if (PORTE.OUT & 0x02)
       g_motor_pos[1]++;
