@@ -138,7 +138,7 @@ bool process_byte(uint8_t b, ros::Publisher *pub)
           uint16_t encoder_1 = (uint32_t) pkt[2]        + 
                                (uint32_t)(pkt[3] << 8);
           //printf("encoders 10: %06d  %06d\n", encoder_0, encoder_1);
-          sensors_msg.encoder[0] = encoder_0;
+          sensors_msg.encoder[0] = encoder_1;
           return true;
         }
         else if (g_rx_state == STEPPER_ENCODER_1)
@@ -147,7 +147,7 @@ bool process_byte(uint8_t b, ros::Publisher *pub)
                                (uint32_t)(pkt[1] << 8);
           uint16_t encoder_1 = (uint32_t) pkt[2]        + 
                                (uint32_t)(pkt[3] << 8);
-          printf("encoders 11: %06d  %06d\n", encoder_0, encoder_1);
+          //printf("encoders 11: %06d  %06d\n", encoder_0, encoder_1);
           sensors_msg.encoder[1] = encoder_0;
           sensors_msg.encoder[2] = encoder_1;
           return true;
@@ -390,8 +390,8 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
       uint32_t t = 200000 / abs(act.stepper_vel[i]);
       if (t > 0x7fff)
         t = 0x7fff;
-      if (t < 70)
-        t = 70; // don't thrash the mcu with interrupts...
+      if (t < 50)
+        t = 50; // don't thrash the mcu with interrupts...
       stepper_timers[i] = t;
       if (act.stepper_vel[i] < 0)
         stepper_timers[i] |= 0x8000; // high bit = direction
@@ -468,6 +468,7 @@ int main(int argc, char **argv)
   sensors_msg.encoder.resize(4);
   send_stepper_vel(10, 0, 0); // stop em
   send_stepper_vel(11, 0, 0); // stop em
+
   enable_motor(10, 1); // power em up
   enable_motor(11, 1); // power em up
   

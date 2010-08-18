@@ -31,7 +31,7 @@ if __name__ == '__main__':
     global g_autopilot
     if not g_autopilot:
       if len(msg.axes) >= 3:
-        g_stepper_vel[3] = msg.axes[0] * 6000.0
+        g_stepper_vel[3] = msg.axes[0] * 10000.0
         g_servo_torque[0] = msg.axes[1] * 1023.0
         g_servo_torque[1] = msg.axes[2] * 1023.0
 
