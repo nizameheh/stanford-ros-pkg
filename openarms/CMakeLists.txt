@@ -88,6 +88,8 @@ rosbuild_add_executable(goto_cart control/goto_cart.cpp)
 rosbuild_add_executable(state-dummy state/state-dummy.cpp)
 rosbuild_add_executable(armbus_sim sim/armbus_sim.cpp)
 rosbuild_add_executable(control_jointspace control/control_jointspace.cpp)
+rosbuild_add_executable(find_stepper_home control/find_stepper_home.cpp)
+rosbuild_add_executable(chatter control/chatter.cpp)
 #rosbuild_add_executable(laser-tilter drivers/laser-tilter.cpp)
 #rosbuild_add_executable(wrist-torques drivers/wrist-torques.cpp)
 
