@@ -7,9 +7,9 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ai.stanford.edu/~mquigley</url>
-  <depend package="openarms"/>
-  <depend package="uvc_cam"/>
   <depend package="roscpp"/>
+  <depend package="openarms"/>
+  <depend package="camera1394"/>
   <depend package="opencv2"/>
   <depend package="cv_bridge"/>
   <depend package="tf"/>
