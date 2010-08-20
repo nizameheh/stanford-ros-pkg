@@ -1,0 +1,6 @@
+<launch>
+  <node type="image_view" pkg="image_view" name="image_view">
+    <remap from="image" to="camera/image_raw"/>
+    <param name="autosize" value="true"/>
+  </node>
+</launch>

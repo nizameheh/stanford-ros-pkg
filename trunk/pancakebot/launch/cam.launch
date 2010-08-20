@@ -1,0 +1,6 @@
+<launch>
+  <node type="camera1394_node" pkg="camera1394" name="camera" output="screen">
+    <param name="video_mode" value="1280x960_mono8"/>
+    <param name="iso_speed" value="800"/>
+  </node>
+</launch>
