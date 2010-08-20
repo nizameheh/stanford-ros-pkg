@@ -16,6 +16,8 @@ rosbuild_gensrv()
 
 #common commands for building c++ executables and libraries
 #rospack_add_library(${PROJECT_NAME} filters/ekf.cpp)
+include_directories(include)
+rosbuild_add_library(pancakes src/pancakes.cpp)
 
-rosbuild_add_executable(pancake_detector src/pancake_detector.cpp)
-
+rosbuild_add_executable(pancake_detector_node src/pancake_detector_node.cpp)
+target_link_libraries(pancake_detector_node pancakes)
