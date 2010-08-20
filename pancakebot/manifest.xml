@@ -1,0 +1,23 @@
+<package>
+  <description brief="pancakebot makes pancakes for you">
+    An application of the openarms hardware/software stack which hopes to
+    someday make delicious pancakes.
+  </description>
+  <author>Morgan Quigley mquigley@cs.stanford.edu, Alan Asbeck aasbeck@stanford.edu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ai.stanford.edu/~mquigley</url>
+  <depend package="openarms"/>
+  <depend package="uvc_cam"/>
+  <depend package="roscpp"/>
+  <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
+  <depend package="tf"/>
+  <depend package="joy"/>
+  <depend package="robot_state_publisher"/>
+  <depend package="sensor_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="std_msgs"/>
+  <depend package="visualization_msgs"/>
+</package>
+

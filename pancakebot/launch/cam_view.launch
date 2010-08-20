@@ -1,0 +1,8 @@
+<launch>
+  <node type="sender" pkg="uvc_cam" name="uvc_cam">
+    <param name="device" value="/dev/video1"/>
+  </node>
+  <node type="image_view" pkg="image_view" name="image_view">
+    <remap from="image" to="camera/image"/>
+  </node>
+</launch>
