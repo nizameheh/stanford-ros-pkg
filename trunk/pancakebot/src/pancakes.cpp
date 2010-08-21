@@ -41,20 +41,68 @@ void PancakeDetector::process_image(IplImage *cv_image)
   for (int i = 0; i < seq->total; i++)
   {
     float *c = (float *)cvGetSeqElem(seq, i);
-    unsigned x = cvRound(c[0]), y = cvRound(c[1]);
-    cvCircle(color_image, cvPoint(x, y),
-        cvRound(c[2]), CV_RGB(255,0,0), 3);
+    unsigned x = cvRound(c[0]), y = cvRound(c[1]), r = cvRound(c[2]);
+    // calculate mean and stddev of pixels in this circle
+    double pixel_sum = 0, pancake_mean = 0, pancake_stddev = 0;
+    int pixel_count = 0, pancake_size = r, pancake_outliers = 0;
+    for (int sy = y - r; sy <= y + r; sy++)
+      for (int sx = x - r; sx <= x + r; sx++)
+      {
+        float radius = sqrt((sx-x)*(sx-x) + (sy-y)*(sy-y));
+        if (radius > r)
+          continue; // we're in a corner of the bounding square
+        pixel_sum += CV_IMAGE_ELEM(cv_image, unsigned char, sy, sx);
+        pixel_count++;
+      }
+    pancake_mean = pixel_sum / pixel_count;
+    for (int sy = y - r; sy <= y + r; sy++)
+      for (int sx = x - r; sx <= x + r; sx++)
+      {
+        float radius = sqrt((sx-x)*(sx-x) + (sy-y)*(sy-y));
+        if (radius > r)
+          continue; // we're in a corner of the bounding square
+        unsigned char v = CV_IMAGE_ELEM(cv_image, unsigned char, sy, sx);
+        float diff = v - pancake_mean;
+        pancake_stddev += diff*diff;
+      }
+    pancake_stddev = sqrt(1.0 / pixel_count * pancake_stddev);
+    for (int sy = y - r; sy <= y + r; sy++)
+      for (int sx = x - r; sx <= x + r; sx++)
+      {
+        float radius = sqrt((sx-x)*(sx-x) + (sy-y)*(sy-y));
+        if (radius > r)
+          continue; // we're in a corner of the bounding square
+        unsigned char v = CV_IMAGE_ELEM(cv_image, unsigned char, sy, sx);
+        float diff = v - pancake_mean;
+        if (fabs(diff) > 40)
+          pancake_outliers++;
+      }
+
     uint8_t pancake_grayness = CV_IMAGE_ELEM(cv_image, unsigned char, y, x);
+    // dumb classifier... need to convert this to soft constraints
+    bool pass = pancake_size > 60   && 
+                pancake_size < 150  &&
+                pancake_stddev < 30 &&
+                pancake_outliers < 2000;
     // find connected component
-    cvThreshold(cv_image, binary_image, pancake_grayness-20, 255,
-        CV_THRESH_BINARY);
+    cvThreshold(cv_image, binary_image, pancake_grayness - 2*pancake_stddev,
+                255, CV_THRESH_BINARY);
     /*
-       cvFindContours(binary_image, contour_storage, sizeof(CvContour),
-       CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+    cvFindContours(binary_image, contour_storage, sizeof(CvContour),
+                   CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0));
+    */
+    /*
      */
     //for (CvSeq *contour = contour
 
-    printf("rad %.0f color %d\n", c[2], pancake_grayness);
+
+
+
+    if (pass)
+      cvCircle(color_image, cvPoint(x, y), r, CV_RGB(255,0,0), 3);
+
+    printf("rad %.0f mean %.1f stddev %.1f %d\n", c[2],
+           pancake_mean, pancake_stddev, pancake_outliers );
   }
   cvShowImage("pancake view", color_image);
   cvWaitKey(5);

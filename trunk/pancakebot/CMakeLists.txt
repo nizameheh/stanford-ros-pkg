@@ -21,3 +21,6 @@ rosbuild_add_library(pancakes src/pancakes.cpp)
 
 rosbuild_add_executable(pancake_detector_node src/pancake_detector_node.cpp)
 target_link_libraries(pancake_detector_node pancakes)
+
+rosbuild_add_executable(pancake_detector_standalone src/pancake_detector_standalone.cpp)
+target_link_libraries(pancake_detector_standalone pancakes)
