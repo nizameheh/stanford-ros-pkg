@@ -81,9 +81,10 @@ void PancakeDetector::process_image(IplImage *cv_image)
     uint8_t pancake_grayness = CV_IMAGE_ELEM(cv_image, unsigned char, y, x);
     // dumb classifier... need to convert this to soft constraints
     bool pass = pancake_size > 60   && 
-                pancake_size < 150  &&
+                pancake_size < 100  &&
                 pancake_stddev < 30 &&
-                pancake_outliers < 2000;
+                pancake_outliers < 2000 &&
+                pancake_mean > 50;
     // find connected component
     cvThreshold(cv_image, binary_image, pancake_grayness - 2*pancake_stddev,
                 255, CV_THRESH_BINARY);
@@ -98,12 +99,14 @@ void PancakeDetector::process_image(IplImage *cv_image)
 
 
 
-    if (pass)
-      cvCircle(color_image, cvPoint(x, y), r, CV_RGB(255,0,0), 3);
+    cvCircle(color_image, cvPoint(x, y), r,
+             (pass ? CV_RGB(0,255,0) : CV_RGB(255,0,0)), 3);
 
-    printf("rad %.0f mean %.1f stddev %.1f %d\n", c[2],
-           pancake_mean, pancake_stddev, pancake_outliers );
+
+    printf("rad %.0f mean %.1f stddev %.1f %d  x %d y %d\n", c[2],
+           pancake_mean, pancake_stddev, pancake_outliers, x, y );
   }
+  printf("\n");
   cvShowImage("pancake view", color_image);
   cvWaitKey(5);
 }
