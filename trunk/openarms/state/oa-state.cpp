@@ -7,12 +7,12 @@
 static double g_joint_pos[8];
 ros::Publisher *g_joint_pub = NULL;
 static int32_t g_stepper_offsets[4], g_servo_offsets[3];
-bool g_offset_init_complete = false;
 int32_t g_servo_wraps[3];
 enum servo_wrap_t { COMING_FROM_LOW, COMING_FROM_HIGH, NOT_IN_WRAP} g_servo_in_wrap[3];
 
 void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
 {
+/*
   if (!g_offset_init_complete)
   {
     g_offset_init_complete = true;
@@ -21,7 +21,7 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
     for (int i = 0; i < 3; i++)
       g_servo_offsets[i] = sensors->pos[i+4];
   }
-
+*/
   // 10-microstep, 1.8 deg/step
   g_joint_pos[0] = (sensors->pos[0] - g_stepper_offsets[0]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 6.5; 
   g_joint_pos[1] = (sensors->pos[1] - g_stepper_offsets[1]) / 2.0 / 10.0 * 1.8 * 3.1415 / 180.0 / 10.133 - g_joint_pos[0] / 1.97 - 1.57; 
@@ -125,7 +125,12 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "oa_state");
-  ros::NodeHandle n;
+  if (argc != 2)
+  {
+    ROS_INFO("usage: oa_state CALIBRATION");
+    return 1;
+  }
+  
   for (uint32_t i = 0; i < 8; i++)
     g_joint_pos[i] = 0;
   for (uint32_t i = 0; i < 4; i++)
@@ -136,6 +141,17 @@ int main(int argc, char **argv)
     g_servo_wraps[i] = 0;
     g_servo_in_wrap[i] = NOT_IN_WRAP;
   }
+
+  FILE *f = fopen(argv[1], "r");
+  if (!f)
+  {
+    ROS_ERROR("woah there. couldn't open %s", argv[1]);
+    return 1;
+  }
+  // read in the calibration data...
+  fclose(f);
+  
+  ros::NodeHandle n;
 
   ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("joint_states", 1);
   g_joint_pub = &joint_pub; // ugly ugly
