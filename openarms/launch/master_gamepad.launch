@@ -1,0 +1,9 @@
+<launch>
+  <node name="joy_gamepad" pkg="joy" type="joy_node">
+    <remap from="joy" to="joy_gamepad"/>
+    <param name="dev" value="/dev/input/js3"/>
+  </node>
+  <node name="master_gamepad" pkg="openarms" type="master_gamepad" output="screen">
+    <remap from="joy" to="joy_gamepad"/>
+  </node>
+</launch>
