@@ -7,6 +7,7 @@
 #include <tf_conversions/tf_kdl.h>
 #include "openarms/ArmSensors.h"
 #include "openarms/ArmIKRequest.h"
+#include "openarms/ArmIKParams.h"
 #include "wiimote/State.h"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -38,9 +39,10 @@ KDL::ChainIkSolverPos_NR_JL *g_ik_solver = NULL;
 KDL::ChainJntToJacSolver *g_jac_solver = NULL;
 tf::Transform /*g_target_origin, */g_target;
 std::vector<double> g_pose;
+static double g_posture = 0.5, g_posture_gain = 0;
 
 const double g_joint_min[7] = {-1.6, -2.7, -0.9, -2  , -3.14, -1.57, -3.14};
-const double g_joint_max[7] = {   0, -0.4,  4  , 0.83,  3.14,  1.57,  3.14};
+const double g_joint_max[7] = { 0.5, -0.4,  4  , 0.83,  3.14,  1.57,  3.14};
 
 tf::Transform fk_tool(const std::vector<double> &x) // joint angles 
 {
@@ -99,7 +101,7 @@ bool ik_tool(tf::Transform t, std::vector<double> &joints,
 
   KDL::Jacobian jac(7);
   g_jac_solver->JntToJac(q, jac);
-  printf("jacobian: %d x %d\n", jac.data.transpose().rows(), jac.data.transpose().cols());
+  //printf("jacobian: %d x %d\n", jac.data.transpose().rows(), jac.data.transpose().cols());
   //SVD< Eigen::Matrix<double, 7, Eigen::Dynamic> > svd(jac.data.transpose());
   MatrixXd jac_padded(7, 7);
   for (int i = 0; i < 7; i++)
@@ -111,21 +113,23 @@ bool ik_tool(tf::Transform t, std::vector<double> &joints,
         jac_padded(i, j) = 0;
     }
   SVD< Eigen::MatrixXd > svd(jac_padded);
+  /*
   printf("%d singular values\n", svd.singularValues().size());
   for (int i = 0; i < svd.singularValues().size(); i++)
     printf("%d:  %f\n", i, svd.singularValues()(i));
 
   //cout << jac.data << endl << endl;
   cout << svd.matrixU() << endl << endl;
+  */
 
   // call the robot posture the angle of the shoulder lift joint, normalized
   // into [0..1] by how far we are from other joint limits. total hack... i'm 
-  // not sure how elite people would do this. (todo)
+  // not sure how elite people would do this.
   double posture = (q.data[1] - g_joint_min[1]) / (g_joint_max[1] - g_joint_min[1]);
   printf("posture: %f   req = %f\n", posture, req_posture);
 
   for (int i = 0; i < 7; i++)
-    joints[i] = q.data[i] + 
+    joints[i] = q.data[i] -
                 posture_gain * (req_posture - posture) * svd.matrixU()(i, 6);
   return true;
 }
@@ -135,6 +139,18 @@ void joint_cb(const sensor_msgs::JointState &msg)
   g_actual_js = msg;
 }
 
+bool ik_params_cb(openarms::ArmIKParams::Request  &req,
+                  openarms::ArmIKParams::Response &res)
+{
+  if (req.posture < 0)
+    req.posture = 0;
+  else if (req.posture > 1)
+    req.posture = 1;
+  g_posture = req.posture;
+  g_posture_gain = req.posture_gain;
+  return true;
+}
+
 void ik_request_cb(const openarms::ArmIKRequest &req_msg)
 {
   // assume the transform coming in is a delta away from the center 
@@ -142,6 +158,7 @@ void ik_request_cb(const openarms::ArmIKRequest &req_msg)
   //tf::Transform t_bump(btQuaternion::getIdentity(),
   //                     btVector3(d_pose, 0, 0));
   //tf::Transform t_target = t_tool * t_bump;
+#if 0
   tf::Transform t_input;
   tf::transformMsgToTF(req_msg.t, t_input);
   tf::StampedTransform t(t_input, ros::Time::now(), "world", "ik_target");
@@ -156,6 +173,7 @@ void ik_request_cb(const openarms::ArmIKRequest &req_msg)
     for (int i = 0; i < 7; i++)
       j_ik[i] = g_actual_js.position[i];
   }
+#endif
   //t.setRotation(t.getRotation() * btQuaternion(0, 0, 0));
   //t_target_in_torso = g_target_origin * t;
   /*
@@ -170,11 +188,13 @@ void ik_request_cb(const openarms::ArmIKRequest &req_msg)
     return;
   }
   */
-  tf::StampedTransform t_target_in_torso(t, ros::Time::now(),
+#if 0
+  tf::stampedtransform t_target_in_torso(t, ros::time::now(),
                                          "world", "ik_target");
-  geometry_msgs::TransformStamped target_trans_msg;
-  tf::transformStampedTFToMsg(t_target_in_torso, target_trans_msg);
-  g_tf_broadcaster->sendTransform(target_trans_msg);
+  geometry_msgs::transformstamped target_trans_msg;
+  tf::transformstampedtftomsg(t_target_in_torso, target_trans_msg);
+  g_tf_broadcaster->sendtransform(target_trans_msg);
+#endif
 
 /*
 
@@ -195,11 +215,13 @@ void ik_request_cb(const openarms::ArmIKRequest &req_msg)
   g_tf_broadcaster->sendTransform(target_origin_msg);
 */
 //  ik_tool(g_target_origin * t, j_ik);
+#if 0
   ik_tool(t, j_ik, req_msg.posture, req_msg.posture_gain);
 
   g_js.header.stamp = ros::Time::now();
   g_js.position = j_ik;
   g_joint_pub->publish(g_js);
+#endif
 }
 
 int main(int argc, char **argv)
@@ -230,15 +252,17 @@ int main(int argc, char **argv)
   ROS_INFO("parsed tree successfully");
   ///////////////////////////////////////////////////////////////////////
 
-  ros::Subscriber target_sub = n.subscribe("ik_request", 1, ik_request_cb);
+  //ros::Subscriber target_sub = n.subscribe("ik_request", 1, ik_request_cb);
   ros::Subscriber joint_sub = n.subscribe("joint_states", 1, joint_cb);
   ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("target_joints", 1);
+  ros::ServiceServer ik_param_srv = n.advertiseService("arm_ik_params", 
+                                                       ik_params_cb);
   g_joint_pub = &joint_pub; // ugly ugly
   tf::TransformBroadcaster tf_broadcaster;
   tf::TransformListener tf_listener;
   g_tf_broadcaster = &tf_broadcaster;
   g_tf_listener = &tf_listener;
-  ros::Rate loop_rate(20);
+  ros::Rate loop_rate(30);
   geometry_msgs::TransformStamped world_trans;
   world_trans.header.frame_id = "world";
   world_trans.child_frame_id = "torso_link";
@@ -250,12 +274,14 @@ int main(int argc, char **argv)
   g_js.name.resize(7);
   g_js.position.resize(7);
   g_js.name[0] = "shoulder1";
-  g_js.name[1] = "shoulder2`";
+  g_js.name[1] = "shoulder2";
   g_js.name[2] = "shoulder3";
   g_js.name[3] = "elbow";
   g_js.name[4] = "wrist1";
   g_js.name[5] = "wrist2";
   g_js.name[6] = "wrist3";
+  for (int i = 0; i < 7; i++)
+    g_js.position[i] = 0;
 
   KDL::TreeFkSolverPosFull_recursive fk_solver(tree);
   g_fk_solver = &fk_solver;
@@ -300,10 +326,40 @@ int main(int argc, char **argv)
   //g_target_origin = btTransform(btQuaternion::getIdentity(), btVector3(0, 0.1, 0));
   //tf::Transform(btQuaternion::getIdentity(), btVector3(0, 0, 0));
 
+  std::vector<double> j_ik;
+  j_ik.resize(7);
   while (ros::ok())
   {
+    loop_rate.sleep();
+    ros::spinOnce();
+
     world_trans.header.stamp = ros::Time::now();
     tf_broadcaster.sendTransform(world_trans);
+
+    if (g_actual_js.position.size() >= 7)
+    {
+      for (int i = 0; i < 7; i++)
+        j_ik[i] = g_actual_js.position[i];
+    }
+
+    tf::StampedTransform t;
+    try
+    {
+      g_tf_listener->lookupTransform("torso_link", "ik_target",
+                                     ros::Time(0), t);
+    }
+    catch (tf::TransformException ex)
+    {
+      ROS_ERROR("%s", ex.what());
+      continue;
+    }
+    if (ik_tool(t, j_ik, g_posture, g_posture_gain))
+    {
+      g_js.header.stamp = ros::Time::now();
+      g_js.position = j_ik;
+      g_joint_pub->publish(g_js);
+    }
+    ros::spinOnce();
 
 /*
     double x = t.getOrigin().x(), y = t.getOrigin().y(), z = t.getOrigin().z();
@@ -347,8 +403,6 @@ int main(int argc, char **argv)
       d_pose_inc = 0.005;
     printf("%f %f\n", d_pose, d_pose_inc);
 */
-    loop_rate.sleep();
-    ros::spinOnce();
   }
   return 0;
 }

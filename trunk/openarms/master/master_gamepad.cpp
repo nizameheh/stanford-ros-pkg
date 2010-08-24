@@ -8,6 +8,7 @@
 #include "LinearMath/btTransform.h"
 #include "tf/transform_datatypes.h"
 #include "tf/transform_broadcaster.h"
+#include "openarms/ArmIKParams.h"
 #include "joy/Joy.h"
 
 const static int32_t MAX_BUTTONS = 10;
@@ -30,6 +31,7 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
   ros::Publisher tf_pub = n.advertise<geometry_msgs::Transform>("target_frame", 1);
   ros::Subscriber joy_sub = n.subscribe("joy", 1, joy_cb);
+  ros::ServiceClient ik_params_client = n.serviceClient<openarms::ArmIKParams>("arm_ik_params");
   g_target_pub = &tf_pub;
   for (int i = 0; i < 4; i++)
     g_joy_axes[i] = 0;
@@ -42,11 +44,15 @@ int main(int argc, char **argv)
   ros::Rate loop_rate(50);
 
   geometry_msgs::Transform tf_msg;
-  btVector3 target_vec(0, 0.75, -0.2);
+  //btVector3 target_vec(0, 0.75, -0.2);
+  btVector3 target_vec(0.63, -0.12, -0.17); //0, 0.75, -0.2);
 
   tf::TransformBroadcaster tf_broadcaster;
-  btQuaternion orient(btQuaternion(btVector3(1, 0, 0), -2.5)); // *
+  //btQuaternion orient(btQuaternion(btVector3(1, 0, 0), -2.5)); // *
                       //btQuaternion(btVector3(1, 0, 0), 2.50));
+  btQuaternion orient(-0.092, 0.683, -0.724, -0.019); //  0.615, -0.755, 0.166, -0.152);
+  int nullspace_move = 0;
+  openarms::ArmIKParams ik_params;
 
   while (ros::ok())
   {
@@ -59,11 +65,50 @@ int main(int argc, char **argv)
     }
     else
     {
-      double speed = (g_joy_buttons[4] ? 0.040 : 0.01);
+      double speed = 0.01;
+      if (g_joy_buttons[4])
+        speed = 0.04;
+      else if (g_joy_buttons[6])
+        speed = 0.10;
       orient = btQuaternion(btVector3(1, 0, 0), speed * g_joy_axes[1]) * orient;
       orient = btQuaternion(btVector3(0, 0, 1), speed * g_joy_axes[0]) * orient;
       orient = orient * btQuaternion(btVector3(0, 0, 1), speed * g_joy_axes[2]);
       orient.normalize();
+    }
+    if (g_joy_buttons[1] && nullspace_move != -1)
+    {
+      nullspace_move = -1;
+      ik_params.request.posture = 0.95;
+      ik_params.request.posture_gain = 0.5;
+      ik_params_client.call(ik_params);
+    }
+    else if (g_joy_buttons[2] && nullspace_move != 1)
+    {
+      nullspace_move = 1;
+      ik_params.request.posture = 0.05;
+      ik_params.request.posture_gain = 0.5;
+      ik_params_client.call(ik_params);
+    }
+    else if (g_joy_buttons[0] && nullspace_move != -2)
+    {
+      nullspace_move = -2;
+      ik_params.request.posture = 0.95;
+      ik_params.request.posture_gain = 2.0;
+      ik_params_client.call(ik_params);
+    }
+    else if (g_joy_buttons[3] && nullspace_move != 2)
+    {
+      nullspace_move = 2;
+      ik_params.request.posture = 0.05;
+      ik_params.request.posture_gain = 2.0;
+      ik_params_client.call(ik_params);
+    }
+    else if (!g_joy_buttons[1] && !g_joy_buttons[2] && nullspace_move != 0)
+    {
+      nullspace_move = 0;
+      ik_params.request.posture = 0.3;
+      ik_params.request.posture_gain = 0;
+      ik_params_client.call(ik_params);
     }
     /*
     tf::transformTFToMsg(tf::Transform(btQuaternion::getIdentity(), target_vec),
