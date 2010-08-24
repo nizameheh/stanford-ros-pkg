@@ -72,6 +72,17 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
   // enforce joint limits on the wrap count
   // wrist pitch. enforce joint limits on wrap count
 
+  if (g_joint_pos[4] < -3.1)
+  {
+    ROS_ERROR("woah, forearm roll overwrap negative");
+    g_servo_wraps[0]++;
+  }
+  else if (g_joint_pos[4] > 3.1)
+  {
+    ROS_ERROR("woah, forearm roll overwrap positive");
+    g_servo_wraps[0]--;
+  }
+
   if (g_joint_pos[5] < -2.5)
   {
     ROS_ERROR("woah, wrist overwrap negative");
@@ -82,7 +93,19 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
     ROS_ERROR("woah, wrist overwrap positive");
     g_servo_wraps[1]--;
   }
-
+  printf("%d %d %d\n", g_servo_wraps[0], g_servo_wraps[1], g_servo_wraps[2]);
+/*
+  if (g_joint_pos[6] > 3.1)
+  {
+    ROS_ERROR("woah, wrist-roll overwrap positive");
+    g_servo_wraps[2]--;
+  }
+  else if (g_joint_pos[6] < -3.1)
+  {
+    ROS_ERROR("woah, wrist-roll overwrap positive");
+    g_servo_wraps[2]++;
+  }
+*/
   // enforce joint limits on forearm roll
   /*
   if (g_joint_pos[4] < -3.0)
@@ -145,8 +168,8 @@ int main(int argc, char **argv)
     g_servo_wraps[i] = 0;
     g_servo_in_wrap[i] = NOT_IN_WRAP;
   }
-  g_servo_wraps[0] = -1;
-  g_servo_wraps[1] = -1;
+  g_servo_wraps[0] = 0;
+  g_servo_wraps[1] = 0;
   g_servo_wraps[2] = -1;
 
   FILE *f = fopen(argv[1], "r");

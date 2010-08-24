@@ -1,5 +1,8 @@
 <launch>
-  <param name="robot_description" textfile="$(find openarms)/urdf/idealized.xml"/>
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
-  <!--<node name="rviz" pkg="rviz" type="rviz"/>-->
+  <node name="joy_gamepad" pkg="joy" type="joy_node">
+    <param name="dev" value="/dev/input/js0"/>
+  </node>
+  <param name="robot_description" textfile="$(find openarms)/urdf/oa9.xml"/>
+  <!--<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>-->
+  <node name="rviz" pkg="rviz" type="rviz"/>
 </launch>
