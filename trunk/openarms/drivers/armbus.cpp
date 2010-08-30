@@ -216,7 +216,7 @@ void send_torque(uint8_t id, uint16_t torque, uint8_t dir)
   uint8_t data[20];
   data[0] = (uint8_t)(torque & 0xff);
   data[1] = (uint8_t)((0x3 & (torque >> 8))) | (dir ? 0x04 : 0x00);
-  write_data(id, 0x20, 2, data); // "moving speed" register
+  //write_data(id, 0x20, 2, data); // "moving speed" register
 }
 
 void send_stepper_vel(uint8_t id, uint16_t vel_0, uint16_t vel_1)

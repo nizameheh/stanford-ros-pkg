@@ -93,7 +93,7 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
     ROS_ERROR("woah, wrist overwrap positive");
     g_servo_wraps[1]--;
   }
-  printf("%d %d %d\n", g_servo_wraps[0], g_servo_wraps[1], g_servo_wraps[2]);
+  //printf("%d %d %d\n", g_servo_wraps[0], g_servo_wraps[1], g_servo_wraps[2]);
 /*
   if (g_joint_pos[6] > 3.1)
   {

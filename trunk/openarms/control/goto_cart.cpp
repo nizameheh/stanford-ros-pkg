@@ -226,7 +226,7 @@ void ik_request_cb(const openarms::ArmIKRequest &req_msg)
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "ik_test");
+  ros::init(argc, argv, "cartesian");
   ros::NodeHandle n;
   ros::NodeHandle n_private("~");
 
