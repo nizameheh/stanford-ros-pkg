@@ -92,6 +92,5 @@ rosbuild_add_executable(find_stepper_home control/find_stepper_home.cpp)
 rosbuild_add_executable(chatter control/chatter.cpp)
 rosbuild_add_executable(waypoint_keyboard control/waypoint_keyboard.cpp)
 rosbuild_add_executable(relative_control_skeleton control/relative_control_skeleton.cpp)
-#rosbuild_add_executable(laser-tilter drivers/laser-tilter.cpp)
-#rosbuild_add_executable(wrist-torques drivers/wrist-torques.cpp)
+rosbuild_add_executable(trajectory_follower control/trajectory_follower.cpp)
 
