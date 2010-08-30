@@ -24,7 +24,7 @@ enum js_latch_state_t
 
 void traj_cb(const openarms::Trajectory::ConstPtr traj)
 {
-  ROS_INFO("received %d-state trajectory\n", (int)traj->pts.size());
+  ROS_INFO("received %d-state trajectory", (int)traj->pts.size());
   g_next_traj = *traj;
   g_next_traj_valid = true; // handshake to avoid race condition
 }
@@ -68,6 +68,7 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
     rate.sleep();
+    ros::spinOnce();
     ros::Time t = ros::Time::now();
 
     ssize_t nread = read(0, &c, 1);
@@ -108,27 +109,34 @@ int main(int argc, char **argv)
         js_cmd = js_end;
       else if (pt->interpolation == openarms::TrajectoryPoint::INTERP_LINEAR)
       {
-        if (pt->moving_sec < 0.001) // sanitize it...
-          pt->moving_sec = 0.001;
-        double x = state_time / pt->moving_sec; // in [0,1] for interpolation
+        if (pt->move_sec < 0.001) // sanitize it...
+          pt->move_sec = 0.001;
+        double x = state_time / pt->move_sec; // in [0,1] for interpolation
+        ROS_INFO("target=%d x=%f", target_idx, x);
         if (x < 0)
           x = 0; // shouldn't happen...
         if (x < 1)
         {
           js_cmd = js_end; // populate the joint names and such
           for (size_t j = 0; j < js_end.position.size(); j++) // convex comb.
-            js_end.position[j] = (1.0-x) * js_start.position[j] +
+            js_cmd.position[j] = (1.0-x) * js_start.position[j] +
                                       x  * js_end.position[j];
         }
         else // we're in the dwell time. hang out here.
           js_cmd = js_end;
       }
       js_pub.publish(js_cmd);
-      if (state_time > pt->moving_sec + pt->dwell_sec) // shall we move on ?
+      if (state_time > pt->move_sec + pt->dwell_sec) // shall we move on ?
       {
         target_idx++;
+        state_start_t = t;
         if (target_idx >= (int)g_traj.pts.size())
+        {
+          ROS_INFO("trajectory complete");
           controller_state = STOPPED;
+        }
+        else
+          ROS_INFO("going to state %d", target_idx);
       }
     }
   }

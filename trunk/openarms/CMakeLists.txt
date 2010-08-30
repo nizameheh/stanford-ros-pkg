@@ -93,4 +93,5 @@ rosbuild_add_executable(chatter control/chatter.cpp)
 rosbuild_add_executable(waypoint_keyboard control/waypoint_keyboard.cpp)
 rosbuild_add_executable(relative_control_skeleton control/relative_control_skeleton.cpp)
 rosbuild_add_executable(trajectory_follower control/trajectory_follower.cpp)
+rosbuild_add_executable(trajectory_sender control/trajectory_sender.cpp)
 
