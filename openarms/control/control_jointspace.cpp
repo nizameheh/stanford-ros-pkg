@@ -24,7 +24,7 @@ bool set_joint_target_srv(openarms::SetJointTarget::Request &req,
 
 void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
 {
-  const double MAX_VEL_BIGDOGS = 200, MAX_VEL_LITTLEDOGS = 200;
+  const double MAX_VEL_BIGDOGS = 2000, MAX_VEL_LITTLEDOGS = 2000;
   const double MAX_ACCEL_PER_SEC = 30000;
   static ros::Time s_prev_time;
   static bool s_prev_time_init = false;
@@ -47,7 +47,7 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
       for (int i = 0; i < 4; i++)
       {
         double err = g_target.position[i] - state_msg->position[i];
-        double desired_vel = 1000 * err;
+        double desired_vel = 2000 * err;
         double accel = desired_vel - g_actuators.stepper_vel[i];
         // enforce acceleration limit
         if (accel > MAX_ACCEL)
