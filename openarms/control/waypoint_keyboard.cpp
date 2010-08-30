@@ -7,8 +7,10 @@
 #include <openarms/SetJointTarget.h>
 #include <sensor_msgs/JointState.h>
 #include <vector>
+#include <string>
 #include <cstring>
 using std::vector;
+using std::string;
 
 struct termios cooked, raw; // mmm makes me hungry
 
@@ -27,6 +29,7 @@ int main(int argc, char **argv)
     return 1;
   }
   vector<sensor_msgs::JointState> js_vec;
+  vector<string> js_name_vec;
   while (!feof(f))
   {
     char line[1000];
@@ -48,12 +51,16 @@ int main(int argc, char **argv)
     for (int i = 0; i < 8; i++)
       js.position[i] = 0;
     const char *token = strtok(line, " \n");
+    if (!token)
+      continue; // blank line ?
+    js_name_vec.push_back(string(token));
+    token = strtok(NULL, " \n");
     for (int i = 0; token; i++, token = strtok(NULL, " \n"))
       js.position[i] = atof(token);
-    printf("%c: ", (uint8_t)js_vec.size() + 'a');
+    printf("%c) %s: ", (uint8_t)js_vec.size() + 'a', js_name_vec.back().c_str());
     js_vec.push_back(js);
     for (int i = 0; i < 8; i++)
-      printf(" %+08.2f", js.position[i]);
+      printf(" %+06.2f", js.position[i]);
     printf("\n");
   }
 
@@ -84,7 +91,8 @@ int main(int argc, char **argv)
       int js_idx = c - 'a';
       if (js_idx >= 0 && js_idx < (int)js_vec.size())
       {
-        ROS_INFO("sent waypoint %c", 'a' + js_idx);
+        ROS_INFO("sent waypoint %c: [%s]",
+                 'a' + js_idx, js_name_vec[js_idx].c_str());
         pub.publish(js_vec[js_idx]);
       }
       else
