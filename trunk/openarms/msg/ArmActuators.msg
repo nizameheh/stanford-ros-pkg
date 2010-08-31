@@ -1,2 +1,2 @@
 int32[] stepper_vel
-int32[] servo_pos
+int32[] servo_goal
