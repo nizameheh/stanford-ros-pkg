@@ -20,7 +20,7 @@ void sensors_cb(const openarms::ArmSensors::ConstPtr &sensors)
   for (int i = 4; i < 8; i++)
   {
     int enc = sensors->pos[i]; // should rename this sometime; these r the pots
-    g_joint_pos[i] = (enc - 512) * g_encoder_scales[i] + g_encoder_offsets[i];
+    g_joint_pos[i] = enc * g_encoder_scales[i] + g_encoder_offsets[i];
   }
 
   // handle the gripper now

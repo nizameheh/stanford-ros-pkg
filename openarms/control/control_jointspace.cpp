@@ -25,8 +25,9 @@ bool set_joint_target_srv(openarms::SetJointTarget::Request &req,
 
 void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
 {
-  const double MAX_VEL_BIGDOGS = 5000, MAX_VEL_LITTLEDOGS = 8000;
-  const double MAX_ACCEL_PER_SEC = 60000;
+  const double MAX_VEL_BIGDOGS = 4000, MAX_VEL_LITTLEDOGS = 4000;
+  const double MAX_ACCEL_PER_SEC_LITTLEDOGS = 6000;
+  const double MAX_ACCEL_PER_SEC_BIGDOGS = 1000;
   static ros::Time s_prev_time;
   static bool s_prev_time_init = false;
 
@@ -35,13 +36,14 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
   
   // Upper 4 DOF PID gains:
   //               0    1    2    3
-  const double stepper_ki[4] = {400.0, 400.0, 650.0, 800.0};
+  const double stepper_ki[4] = {2000.0, 2000.0, 6000.0, 9000.0};
   //const double stepper_ki[4] = {0, 0, 0, 0};
 
   //const double stepper_kp[4] = {-40000, -40000, 0.0, 0.0};
-  const double stepper_kp[4] = {-40000, -50000, -65000, -80000};
-  const double stepper_kd[4] = {0.0, 0.0, 0.0, 0.0};
-  const double pos_err_sat[4] = {0.1, 0.1, 0.1, 0.2};
+  //const double stepper_kp[4] = {-40000, -50000, -65000, -80000};
+  const double stepper_kp[4] = {0, 0, 0, 0};
+  const double stepper_kd[4] = {0, 0, 0, 0};
+  const double pos_err_sat[4] = {1.0, 1.0, 1.0, 1.0};
   
   if (!s_prev_time_init)
   {
@@ -61,7 +63,8 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
   ros::Time t = ros::Time::now();
   double dt = (t - s_prev_time).toSec();
   s_prev_time = t;
-  const int32_t MAX_ACCEL = (int32_t)(MAX_ACCEL_PER_SEC * dt);
+  const int32_t MAX_ACCEL_LITTLEDOGS = (int32_t)(MAX_ACCEL_PER_SEC_LITTLEDOGS * dt);
+  const int32_t MAX_ACCEL_BIGDOGS = (int32_t)(MAX_ACCEL_PER_SEC_BIGDOGS * dt);
 
   // compute *actual* velocities and accels using the state_msg positions, 
   // which are the actual encoder readings:
@@ -69,24 +72,36 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
   for (int i = 0; i < 4; i++)
   {
     // low-pass filter the encoders to smooth out their difference...
-    vel[i] = 0.3*(state_msg->position[i] - s_prev_encoder[i]) + 
-             0.7*s_prev_vel[i];
+    vel[i] = 0.2*(state_msg->position[i] - s_prev_encoder[i]) + 
+             0.8*s_prev_vel[i];
     s_prev_encoder[i] = state_msg->position[i];
-    if (vel[i] < -8000)
-      vel[i] += 10000;
-    else if (vel[i] > 8000)
-      vel[i] -= 10000;
 
     accel[i] = vel[i] - s_prev_vel[i];
     s_prev_vel[i] = vel[i];
 
     pos_err[i] = g_target.position[i] - state_msg->position[i]; // rad
+    while (pos_err[i] > M_PI)
+      pos_err[i] -= 2 * M_PI;
+    while (pos_err[i] < -M_PI)
+      pos_err[i] += 2 * M_PI;
     // saturate this so it doesn't dominate the velocity loop
     if (pos_err[i] > pos_err_sat[i])
       pos_err[i] = pos_err_sat[i];
     else if (pos_err[i] < -pos_err_sat[i])
       pos_err[i] = -pos_err_sat[i];
   }
+
+  /*
+  printf("accel: %.4f %.4f %.4f %.4f\n",
+         stepper_kd[0] * accel[0],
+         stepper_kd[1] * accel[1],
+         stepper_kd[2] * accel[2],
+         stepper_kd[3] * accel[3]);
+  */
+  /*
+  printf("vel: %.4f %.4f %.4f %.4f\n",
+         vel[0], vel[1], vel[2], vel[3]);
+  */
 
   double desired_vel[4];
   desired_vel[0] = stepper_ki[0] * pos_err[0]
@@ -111,10 +126,11 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
     double des_accel = desired_vel[i] - g_actuators.stepper_vel[i];
 
     // enforce acceleration limit
-    if (des_accel > MAX_ACCEL)
-      des_accel = MAX_ACCEL;
-    else if (des_accel < -MAX_ACCEL)
-      des_accel = -MAX_ACCEL;
+    const double MAX_ACCEL_POUR_MOI = i < 2 ? MAX_ACCEL_BIGDOGS : MAX_ACCEL_LITTLEDOGS;
+    if (des_accel > MAX_ACCEL_POUR_MOI)
+      des_accel = MAX_ACCEL_POUR_MOI;
+    else if (des_accel < -MAX_ACCEL_POUR_MOI)
+      des_accel = -MAX_ACCEL_POUR_MOI;
 
     // enforce velocity limit
     g_actuators.stepper_vel[i] += des_accel;
@@ -124,23 +140,48 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
     else if (g_actuators.stepper_vel[i] < -MAX_VEL)
       g_actuators.stepper_vel[i] = -MAX_VEL;
   }
+
+  ///////////////////////////////////////////////////////////////////
   // handle the servos
+  if (g_target.position[4] > 1.55)
+    g_target.position[4] = 1.55;
+  else if (g_target.position[4] < -1.57)
+    g_target.position[4] = -1.57;
+
+  if (g_target.position[5] > 1.714)
+    g_target.position[5] = 1.714;
+  else if (g_target.position[5] < -1.714)
+    g_target.position[5] = -1.714;
+
+  if (g_target.position[6] > 1.97)
+    g_target.position[6] = 1.97;
+  else if (g_target.position[6] < -1.88)
+    g_target.position[6] = -1.88;
+
+  if (g_target.position[7] > 2.23)
+    g_target.position[7] = 2.23;
+  else if (g_target.position[7] < -0.302)
+    g_target.position[7] = -0.302;
+
   for (int i = 4; i < 8; i++)
   {
     double err = 0;
     err = g_target.position[i] - state_msg->position[i];
 
-    g_servo_integral_err[i-4] += err; //*dt;
+    if (fabs(err) < 0.2)
+      g_servo_integral_err[i-4] += err; //*dt;
+    else
+      g_servo_integral_err[i-4] = 0;
 
     // keep it from having too large of an integral in case it is stuck
-    double MAX_INTEGRAL = 1000;
+    double MAX_INTEGRAL = 10;
     if (g_servo_integral_err[i-4] > MAX_INTEGRAL)
       g_servo_integral_err[i-4] = MAX_INTEGRAL;
     else if (g_servo_integral_err[i-4] < -MAX_INTEGRAL)
       g_servo_integral_err[i-4] = -MAX_INTEGRAL;
 
-    double ki = 0; //40;  // integral gain
-    double kp = 0; //2000; // proportional gain
+    double ki = 50; //40;  // integral gain
+    double kp = 2000; //2000; // proportional gain
 
     double desired_torque = kp * err + ki * g_servo_integral_err[i-4];
 
@@ -148,7 +189,7 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
     //  printf("i=%d: kp*err = %f, ki*interr = %f\n",i,kp*err,ki*g_servo_integral_err[i-4]);
 
     // enforce torque limit
-    int32_t MAX_TORQUE = 500;
+    int32_t MAX_TORQUE = 1000;
     if (desired_torque > MAX_TORQUE)
       desired_torque = MAX_TORQUE;
     else if (desired_torque < -MAX_TORQUE)

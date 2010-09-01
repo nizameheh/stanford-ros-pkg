@@ -85,7 +85,7 @@ if __name__ == '__main__':
       #  gripper_torque = 800
       #elif gripper_torque < -800:
       #  gripper_torque = -800
-      g_autopilot_act.servo_torque = [g_autopilot_act.servo_torque[0], g_autopilot_act.servo_torque[1], g_autopilot_act.servo_torque[2], gripper_torque] #g_servo_torque[3]]
+      g_autopilot_act.servo_torque = [g_autopilot_act.servo_torque[0], g_autopilot_act.servo_torque[1], g_autopilot_act.servo_torque[2], g_autopilot_act.servo_torque[3]] #g_servo_torque[3]]
       pub_act.publish(g_autopilot_act)
     r.sleep()
 
