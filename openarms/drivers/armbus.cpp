@@ -216,7 +216,7 @@ void send_torque(uint8_t id, uint16_t torque, uint8_t dir)
   uint8_t data[20];
   data[0] = (uint8_t)(torque & 0xff);
   data[1] = (uint8_t)((0x3 & (torque >> 8))) | (dir ? 0x04 : 0x00);
-  //write_data(id, 0x20, 2, data); // "moving speed" register
+  write_data(id, 0x20, 2, data); // "moving speed" register
 }
 
 void send_stepper_vel(uint8_t id, uint16_t vel_0, uint16_t vel_1)
@@ -227,6 +227,16 @@ void send_stepper_vel(uint8_t id, uint16_t vel_0, uint16_t vel_1)
   data[2] = (uint8_t)(vel_1 & 0xff);
   data[3] = (uint8_t)(vel_1 >> 8);
   write_data(id, 0x20, 4, data);
+}
+
+void send_joint_limit(uint8_t id, uint16_t cw, uint16_t ccw)
+{
+  uint8_t data[20];
+  data[0] = (uint8_t)(cw & 0xff);
+  data[1] = (uint8_t)((0xff & (cw >> 8)));
+  data[2] = (uint8_t)(ccw & 0xff);
+  data[3] = (uint8_t)((0xff & (ccw >> 8)));
+  write_data(id, 0x06, 4, data); // CW and CCW limit registers (0,0) = wheel
 }
 
 void enable_motors(uint8_t enable)
@@ -261,17 +271,17 @@ void query_motor(uint8_t id)
   pkt[5] = 0x24; // present position
   pkt[6] = 2; // read LSB and MSB
   pkt[7] = calc_checksum(pkt, 7);
-  if (id == 0)
+  if (id == 1)
     g_rx_state = SERVO_POS_0;
-  else if (id == 1)
-    g_rx_state = SERVO_POS_1;
   else if (id == 2)
-    g_rx_state = SERVO_POS_2;
+    g_rx_state = SERVO_POS_1;
   else if (id == 3)
+    g_rx_state = SERVO_POS_2;
+  else if (id == 4)
     g_rx_state = SERVO_POS_3;
   else
   {
-    ROS_INFO("woah there. servo id must be in {0,1,2,3}");
+    ROS_INFO("woah there. servo id must be in {1,2,3,4}");
     return;
   }
   g_serial->write_block(pkt, 8);
@@ -368,7 +378,7 @@ void actuators_cb(const openarms::ArmActuators::ConstPtr &msg)
   }
   if (msg->servo_torque.size() != 4)
   {
-    ROS_INFO("ahhh was expecting 3 servo torques");
+    ROS_INFO("ahhh was expecting 4 servo torques");
     return;
   }
   // flip joints as needed
@@ -471,7 +481,7 @@ int main(int argc, char **argv)
 
   enable_motor(10, 1); // power em up
   enable_motor(11, 1); // power em up
-  
+  enable_motors(1);
   uint32_t scheduled = 0;
   bool replied = false;
   const uint32_t SCH_BEGIN             = 0;
@@ -486,6 +496,10 @@ int main(int argc, char **argv)
   const uint32_t SCH_STEPPER_ENCODER_0 = 8;
   const uint32_t SCH_STEPPER_ENCODER_1 = 9;
   const uint32_t SCH_END               = 9; 
+  /*
+  for (int i = 1; i <= 4; i++)
+    send_joint_limit(i, 0, 0);
+  */
   while (n.ok())
   {
     uint8_t read_buf[60];
@@ -528,23 +542,23 @@ int main(int argc, char **argv)
         query_accelerometer(11);
       else if (scheduled == SCH_SERVO_0)
       {
-        send_torque(0, g_servo_torques[0], g_servo_dirs[0]);
-        query_motor(0);
+        send_torque(1, g_servo_torques[0], g_servo_dirs[0]);
+        query_motor(1);
       }
       else if (scheduled == SCH_SERVO_1)
       {
-        send_torque(1, g_servo_torques[1], g_servo_dirs[1]);
-        query_motor(1);
+        send_torque(2, g_servo_torques[1], g_servo_dirs[1]);
+        query_motor(2);
       }
       else if (scheduled == SCH_SERVO_2)
       {
-        send_torque(2, g_servo_torques[2], g_servo_dirs[2]);
-        query_motor(2);
+        send_torque(3, g_servo_torques[2], g_servo_dirs[2]);
+        query_motor(3);
       }
       else if (scheduled == SCH_SERVO_3)
       {
-        send_torque(3, g_servo_torques[3], g_servo_dirs[3]);
-        query_motor(3);
+        send_torque(4, g_servo_torques[3], g_servo_dirs[3]);
+        query_motor(4);
       }
       else if (scheduled == SCH_ELBOW_ENCODER)
         query_encoder(12);
@@ -565,9 +579,10 @@ int main(int argc, char **argv)
 #endif
     }
   }
+  enable_motors(0);
   enable_motor(10, 0); // turn em off
   enable_motor(11, 0); // turn em off
-  ros::Duration(0.1).sleep(); // let the shutdown packets get sent out
+  ros::Duration(0.5).sleep(); // let the shutdown packets get sent out
   delete s;
   return 0;
 }
