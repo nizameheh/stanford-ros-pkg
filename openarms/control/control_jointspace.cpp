@@ -27,7 +27,7 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
 {
   const double MAX_VEL_BIGDOGS = 4000, MAX_VEL_LITTLEDOGS = 4000;
   const double MAX_ACCEL_PER_SEC_LITTLEDOGS = 6000;
-  const double MAX_ACCEL_PER_SEC_BIGDOGS = 1000;
+  const double MAX_ACCEL_PER_SEC_BIGDOGS = 3000;
   static ros::Time s_prev_time;
   static bool s_prev_time_init = false;
 
@@ -36,7 +36,7 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
   
   // Upper 4 DOF PID gains:
   //               0    1    2    3
-  const double stepper_ki[4] = {2000.0, 2000.0, 6000.0, 9000.0};
+  const double stepper_ki[4] = {3000.0, 4000.0, 6000.0, 9000.0};
   //const double stepper_ki[4] = {0, 0, 0, 0};
 
   //const double stepper_kp[4] = {-40000, -40000, 0.0, 0.0};
@@ -158,10 +158,10 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
   else if (g_target.position[6] < -1.88)
     g_target.position[6] = -1.88;
 
-  if (g_target.position[7] > 2.23)
-    g_target.position[7] = 2.23;
-  else if (g_target.position[7] < -0.302)
-    g_target.position[7] = -0.302;
+  if (g_target.position[7] > 3.9)
+    g_target.position[7] = 3.9;
+  else if (g_target.position[7] < -0.9)
+    g_target.position[7] = -0.9;
 
   for (int i = 4; i < 8; i++)
   {

@@ -112,7 +112,7 @@ int main(int argc, char **argv)
         if (pt->move_sec < 0.001) // sanitize it...
           pt->move_sec = 0.001;
         double x = state_time / pt->move_sec; // in [0,1] for interpolation
-        ROS_INFO("target=%d x=%f", target_idx, x);
+        //ROS_INFO("target=%d x=%f", target_idx, x);
         if (x < 0)
           x = 0; // shouldn't happen...
         if (x < 1)

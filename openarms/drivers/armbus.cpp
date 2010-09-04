@@ -23,6 +23,7 @@ uint16_t g_stepper_timers[4];
 uint16_t g_servo_torques[4], g_servo_dirs[4];
 // the servos are assumed to be programmed as 0,1,..,NUM_MOTORS
 openarms::ArmSensors sensors_msg;
+int g_run_motors = 1;
 
 bool process_byte(uint8_t b, ros::Publisher *pub)
 {
@@ -133,8 +134,8 @@ bool process_byte(uint8_t b, ros::Publisher *pub)
         }
         else if (g_rx_state == STEPPER_ENCODER_0)
         {
-          uint16_t encoder_0 = (uint32_t) pkt[0]        + 
-                               (uint32_t)(pkt[1] << 8);
+          //uint16_t encoder_0 = (uint32_t) pkt[0]        + 
+          //                     (uint32_t)(pkt[1] << 8);
           uint16_t encoder_1 = (uint32_t) pkt[2]        + 
                                (uint32_t)(pkt[3] << 8);
           //printf("encoders 10: %06d  %06d\n", encoder_0, encoder_1);
@@ -212,6 +213,8 @@ void write_data(uint8_t id, uint8_t addr, uint8_t length, uint8_t *data)
 
 void send_torque(uint8_t id, uint16_t torque, uint8_t dir)
 {
+  if (!g_run_motors)
+    return; // SEE YA
   // implemented from the robotis user's manual, page 16
   uint8_t data[20];
   data[0] = (uint8_t)(torque & 0xff);
@@ -221,6 +224,8 @@ void send_torque(uint8_t id, uint16_t torque, uint8_t dir)
 
 void send_stepper_vel(uint8_t id, uint16_t vel_0, uint16_t vel_1)
 {
+  if (!g_run_motors)
+    return; // adios
   uint8_t data[20];
   data[0] = (uint8_t)(vel_0 & 0xff);
   data[1] = (uint8_t)(vel_0 >> 8);
@@ -457,6 +462,9 @@ int main(int argc, char **argv)
   ros::NodeHandle n_private("~");
   std::string port("/dev/ttyUSB0");
   n_private.getParam("port", port);
+  n_private.getParam("run_motors", g_run_motors);
+  if (!g_run_motors)
+    ROS_INFO("You have requested to not run the motors, so I won't.");
   LightweightSerial *s = new LightweightSerial(port.c_str(), 1000000);
   if (!s)
   {
@@ -478,10 +486,10 @@ int main(int argc, char **argv)
   sensors_msg.encoder.resize(4);
   send_stepper_vel(10, 0, 0); // stop em
   send_stepper_vel(11, 0, 0); // stop em
+  enable_motor(10, g_run_motors);
+  enable_motor(11, g_run_motors);
+  enable_motors(g_run_motors);
 
-  enable_motor(10, 1); // power em up
-  enable_motor(11, 1); // power em up
-  enable_motors(1);
   uint32_t scheduled = 0;
   bool replied = false;
   const uint32_t SCH_BEGIN             = 0;
