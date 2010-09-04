@@ -105,6 +105,7 @@ int main(int argc, char **argv)
       js_end = pt->js;
       // generate joint state command using the requested interpolation
       double state_time = (t - state_start_t).toSec();
+      static double last_state_time_print = 0;
       if (pt->interpolation == openarms::TrajectoryPoint::INTERP_NONE)
         js_cmd = js_end;
       else if (pt->interpolation == openarms::TrajectoryPoint::INTERP_LINEAR)
@@ -123,20 +124,29 @@ int main(int argc, char **argv)
                                       x  * js_end.position[j];
         }
         else // we're in the dwell time. hang out here.
+        {
           js_cmd = js_end;
+          if (state_time - last_state_time_print > 1)
+          {
+            last_state_time_print = state_time;
+            printf("remaining dwell time: %.3f\n", state_time - pt->move_sec);
+          }
+        }
       }
       js_pub.publish(js_cmd);
       if (state_time > pt->move_sec + pt->dwell_sec) // shall we move on ?
       {
         target_idx++;
         state_start_t = t;
+        last_state_time_print = 0;
         if (target_idx >= (int)g_traj.pts.size())
         {
           ROS_INFO("trajectory complete");
           controller_state = STOPPED;
         }
         else
-          ROS_INFO("going to state %d", target_idx);
+          ROS_INFO("going to state %d: %s",
+                   target_idx, g_traj.pts[target_idx].n.c_str());
       }
     }
   }
