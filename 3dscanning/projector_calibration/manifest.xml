@@ -1,0 +1,20 @@
+<package>
+  <description brief="projector_calibration">
+
+     projector_calibration
+
+  </description>
+  <author>David Mandle</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/projector_calibration</url>
+  <depend package="rospy"/>
+  <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
+  <depend package="sensor_msgs"/>
+  <depend package="image_geometry"/>
+  <depend package="projector"/>
+
+</package>
+
+

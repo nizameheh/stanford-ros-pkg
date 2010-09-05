@@ -1,0 +1,11 @@
+<launch>
+  <node name="scanner" pkg="graycode_scanner" type="rayrayscanner.py" output="screen">
+    <remap from="image_stream" to="/webcam/image_raw"/>
+    <remap from="camera_info" to="/webcam/camera_info"/>
+    <remap from="get_projector_info" to="/projector/get_projector_info"/>
+    <remap from="set_projection" to="/projector/set_projection"/>
+    <param name="pixels_per_scanline" value="1"/>
+    <param name="scanner_info_file_name" value="/home/davidmandle/scanner_info.yaml"/>
+    <param name="threshold" value="8"/>
+  </node>
+</launch>
