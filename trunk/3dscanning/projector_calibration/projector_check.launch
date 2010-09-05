@@ -1,0 +1,5 @@
+<launch>
+  <node name="projector_check" pkg="projector_calibration" type="projectorcheck.py" output="screen">
+    <param name="grid_spacing" value="10"/>
+  </node>
+</launch>

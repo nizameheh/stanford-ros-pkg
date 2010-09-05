@@ -1,0 +1,7 @@
+<launch>
+  <node name="projector" pkg="projector" type="projector.py" output="screen">
+    <param name="display_index" value="1"/>
+    <param name="projector_info_file" value="/home/davidmandle/projector_info.yaml"/>
+    <param name="delay" value="0.700"/>
+  </node>
+</launch>

@@ -1,0 +1,4 @@
+---
+bool success
+string status_message
+sensor_msgs/PointCloud point_cloud
