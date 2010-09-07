@@ -36,7 +36,7 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
   
   // Upper 4 DOF PID gains:
   //               0    1    2    3
-  const double stepper_ki[4] = {3000.0, 4000.0, 6000.0, 9000.0};
+  const double stepper_ki[4] = {3000.0, 3000.0, 6000.0, 9000.0};
   //const double stepper_ki[4] = {0, 0, 0, 0};
 
   //const double stepper_kp[4] = {-40000, -40000, 0.0, 0.0};
