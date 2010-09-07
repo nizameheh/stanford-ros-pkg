@@ -1,4 +1,4 @@
-home 3 0
+home 5 0
 flip_1 2 0
 flip_2 2 0
 flip_3 2 0
@@ -17,7 +17,7 @@ flip_16 0.4 0
 flip_17 0.4 3
 flip_18 2 0
 flip_19 2 0
-flip_20 2 0
+flip_20 2 10
 flip_21 2 0
 flip_23 2 0
 flip_24 2 0
@@ -30,4 +30,4 @@ flip_30 0.5 3
 flip_31 2 0
 flip_32 3 0
 flip_33 2 0
-home 5 0
+home 3 0

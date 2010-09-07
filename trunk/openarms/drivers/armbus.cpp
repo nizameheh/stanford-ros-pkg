@@ -574,7 +574,7 @@ int main(int argc, char **argv)
       {
         double d_wholearm = (t - t_wholearm).toSec();
         static int s_printcount = 0;
-        if (s_printcount++ % 10 == 0)
+        if (s_printcount++ % 100 == 0)
           printf("%.3f hz\n", 1.0 / d_wholearm);
         t_wholearm = t;
         scheduled = SCH_BEGIN;
