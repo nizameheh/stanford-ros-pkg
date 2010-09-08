@@ -36,12 +36,14 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
   
   // Upper 4 DOF PID gains:
   //               0    1    2    3
-  const double stepper_ki[4] = {3000.0, 3000.0, 6000.0, 9000.0};
-  //const double stepper_ki[4] = {0, 0, 0, 0};
+  //const double stepper_ki[4] = {2200.0, 3000.0, 6000.0, 9000.0};
+  const double stepper_ki[4] = {500, 1000, 6000, 9000};
 
   //const double stepper_kp[4] = {-40000, -40000, 0.0, 0.0};
   //const double stepper_kp[4] = {-40000, -50000, -65000, -80000};
-  const double stepper_kp[4] = {0, 0, 0, 0};
+  //const double stepper_kp[4] = {-35000, -35000, -55000, -80000};
+  const double stepper_kp[4] = {-120000, -150000, -55000, -80000};
+  //const double stepper_kp[4] = {0, 0, 0, 0};
   const double stepper_kd[4] = {0, 0, 0, 0};
   const double pos_err_sat[4] = {1.0, 1.0, 1.0, 1.0};
   
@@ -72,8 +74,8 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
   for (int i = 0; i < 4; i++)
   {
     // low-pass filter the encoders to smooth out their difference...
-    vel[i] = 0.2*(state_msg->position[i] - s_prev_encoder[i]) + 
-             0.8*s_prev_vel[i];
+    vel[i] = 0.5*(state_msg->position[i] - s_prev_encoder[i]) + 
+             0.5*s_prev_vel[i];
     s_prev_encoder[i] = state_msg->position[i];
 
     accel[i] = vel[i] - s_prev_vel[i];

@@ -59,7 +59,7 @@ int main(int argc, char **argv)
   raw.c_cc[VMIN] = 0;
   tcsetattr(0, TCSANOW, &raw);
   puts("greetings. ctrl-c to exit.");
-  ros::Rate rate(50);
+  ros::Rate rate(100);
   char c;
   ros::Time state_start_t = ros::Time::now();
   enum { RUNNING, STOPPED } controller_state = STOPPED;

@@ -102,7 +102,7 @@ int main(int argc, char **argv)
   g_joint_pub = &joint_pub; // ugly ugly
   ros::Subscriber sensor_sub = n.subscribe("arm_sensors", 1, sensors_cb);
   tf::TransformBroadcaster tf_broadcaster;
-  ros::Rate loop_rate(30); // just fast enough to be new enough so tf is happy
+  ros::Rate loop_rate(100); 
   geometry_msgs::TransformStamped world_trans;
   world_trans.header.frame_id = "world";
   world_trans.child_frame_id = "torso_link";
