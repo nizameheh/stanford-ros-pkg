@@ -37,7 +37,7 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
   // Upper 4 DOF PID gains:
   //               0    1    2    3
   //const double stepper_ki[4] = {2200.0, 3000.0, 6000.0, 9000.0};
-  const double stepper_ki[4] = {500, 1000, 6000, 9000};
+  const double stepper_ki[4] = {700, 1400, 6000, 9000};
 
   //const double stepper_kp[4] = {-40000, -40000, 0.0, 0.0};
   //const double stepper_kp[4] = {-40000, -50000, -65000, -80000};
@@ -64,7 +64,10 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
 
   ros::Time t = ros::Time::now();
   double dt = (t - s_prev_time).toSec();
+  if (dt < 0.01)
+    dt = 0.01;
   s_prev_time = t;
+
   const int32_t MAX_ACCEL_LITTLEDOGS = (int32_t)(MAX_ACCEL_PER_SEC_LITTLEDOGS * dt);
   const int32_t MAX_ACCEL_BIGDOGS = (int32_t)(MAX_ACCEL_PER_SEC_BIGDOGS * dt);
 
@@ -74,11 +77,11 @@ void state_cb(const sensor_msgs::JointState::ConstPtr &state_msg)
   for (int i = 0; i < 4; i++)
   {
     // low-pass filter the encoders to smooth out their difference...
-    vel[i] = 0.5*(state_msg->position[i] - s_prev_encoder[i]) + 
-             0.5*s_prev_vel[i];
+    vel[i] = 0.01 * 0.5 * (state_msg->position[i] - s_prev_encoder[i]) / dt + 
+             0.5 * s_prev_vel[i];
     s_prev_encoder[i] = state_msg->position[i];
 
-    accel[i] = vel[i] - s_prev_vel[i];
+    accel[i] = 0.01 * (vel[i] - s_prev_vel[i]) / dt;
     s_prev_vel[i] = vel[i];
 
     pos_err[i] = g_target.position[i] - state_msg->position[i]; // rad

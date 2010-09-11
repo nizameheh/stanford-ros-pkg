@@ -129,7 +129,8 @@ int main(int argc, char **argv)
           if (state_time - last_state_time_print > 1)
           {
             last_state_time_print = state_time;
-            printf("remaining dwell time: %.3f\n", state_time - pt->move_sec);
+            printf("remaining dwell time: %.3f\n",
+                   pt->move_sec + pt->dwell_sec - state_time);
           }
         }
       }
