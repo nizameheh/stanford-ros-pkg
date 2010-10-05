@@ -2,7 +2,7 @@
   <description brief="openarms">
     Concepts, ideas, and experiments on low-cost manipulator design and control.
   </description>
-  <author>Morgan Quigley mquigley@cs.stanford.edu</author>
+  <author>Morgan Quigley mquigley@cs.stanford.edu and Alan Asbeck aasbeck@stanford.edu</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ai.stanford.edu/~mquigley</url>
