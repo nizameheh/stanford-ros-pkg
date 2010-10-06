@@ -1,0 +1,17 @@
+<package>
+  <description brief="recyclerbot">
+
+     recyclerbot
+
+  </description>
+  <author></author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/recyclerbot</url>
+  <depend package="roscpp"/>
+  <depend package="opencv2"/>
+  <depend package="camera1394"/>
+
+</package>
+
+
