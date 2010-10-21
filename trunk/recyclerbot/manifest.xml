@@ -9,6 +9,10 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/recyclerbot</url>
   <depend package="roscpp"/>
+  <depend package="rospy"/>
+  <depend package="rosbag"/>
+  <depend package="sensor_msgs"/>
+  <depend package="geometry_msgs"/>
   <depend package="opencv2"/>
   <depend package="camera1394"/>
 
