@@ -1,0 +1,15 @@
+<package>
+  <description brief="wifi_sniffer">
+    Sniffs for nearby wifi access points and publishes the ssid and signal
+    strengths.
+  </description>
+  <author>Morgan Quigley</author>
+  <license>GPL, as some of this package is derived from the Linux wireless tools</license>
+  <rosdep name="wireless-tools"/>
+  <depend package="roscpp"/>
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-L${prefix}/lib -lwifi_sniffer -Wl,-rpath,${prefix}/lib"/>
+  </export>
+</package>
+
+
