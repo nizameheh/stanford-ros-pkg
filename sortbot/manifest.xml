@@ -1,0 +1,14 @@
+<package>
+  <description brief="sortbot">
+    AWESUM
+  </description>
+  <author>Dave Jackson</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp"/>
+  <depend package="sensor_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="std_msgs"/>
+  <depend package="visualization_msgs"/>
+</package>
+
