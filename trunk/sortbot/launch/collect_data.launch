@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="topic_tools" type="drop" name="narrow_points_dropper" args="narrow_stereo_textured/points2 11 12"/>
+  <node pkg="topic_tools" type="drop" name="narrow_camera_dropper" args="narrow_stereo_textured/left/image_rect_color 11 12"/>
+  <node pkg="topic_tools" type="drop" name="wide_points_dropper" args="wide_stereo/points2 11 12"/>
+  <node pkg="topic_tools" type="drop" name="wide_camera_dropper" args="wide_stereo/left/image_rect_color 11 12"/>
+  <node pkg="rosbag" type="rosbag" name="rosbag" args="record -o $(find sortbot)/data/sortbot_$(env DATASET_NAME) tf tilt_scan narrow_stereo_textured/points2_drop narrow_stereo_textured/left/image_rect_color_drop wide_stereo/points2_drop wide_stereo/left/image_rect_color_drop"/>
+</launch>
