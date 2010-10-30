@@ -9,13 +9,16 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
-rosbuild_init()
+rosbuild_init(recyclerbot)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 include_directories(include)
+rosbuild_add_library(table_detector src/table_detector.cpp)
+
 rosbuild_add_executable(table_detector_node src/table_detector_node.cpp)
+target_link_libraries(table_detector_node table_detector)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
