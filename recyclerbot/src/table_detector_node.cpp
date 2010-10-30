@@ -2,102 +2,85 @@
 #include "sensor_msgs/PointCloud.h"
 #include "sensor_msgs/ChannelFloat32.h"
 #include "geometry_msgs/Point32.h"
-#include "rosbag/bag.h"
-#include "recyclerbot/bottles_and_can_data.h"
+//#include "rosbag/bag.h"
 #include <tf/transform_listener.h>
-
-#define DATAPATH "/home/jiahui/test_data/bottles_and_can_data.bag"
+#include "recyclerbot/table_detector.h"
 
 using namespace std;
 
-class tableDetectorNode
+class TableDetectorNode
 {
 public:
   ros::NodeHandle n;
+	ros::Subscriber ntPoint_sub; // nt = narrow textured point cloud
+	ros::Publisher filteredPoints_pub; // publish processed points
+	tf::TransformListener* tran; // narrow textured to Footprint
+	ros::Time preStamp;
+	TableDetector tableDetector;
   
-  tableDetectorNode()//(ros::NodeHandle &_n) : n(_n), it(_n)
+  TableDetectorNode(ros::NodeHandle &_n) : n(_n)
   {
-    //image_sub = it.subscribe("image", 1, &tableDetectorNode::image_cb, this);
+    filteredPoints_pub = n.advertise<sensor_msgs::PointCloud>("/filtered_points", 1);
+    ntPoint_sub = n.subscribe<sensor_msgs::PointCloud>("/narrow_stereo_textured/points", 1, &TableDetectorNode::nt_cb, this);
+    tran = new tf::TransformListener(n, ros::Duration(2.0));
+    preStamp = ros::Time::now();
+//    ros::Timer timer = n.createTimer(ros::Duration(1.0), boost::bind(&TableDetectorNode::transformPoint, boost::ref(listener)));
+
   }
-  ~tableDetectorNode()
+  
+  ~TableDetectorNode()
   {
-    ROS_INFO("tableDetectorNode destructor");
+    ROS_INFO("TableDetectorNode destructor");
+    delete tran;
+  }
+  
+  void nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // narrow textured call back
+  {
+  	// tranform point cloud into /base_footprint frame
+  	sensor_msgs::PointCloud transformedPoints;
+  	if (preStamp >= msg->header.stamp) 
+  	{
+  		cout<<"flush listener"<<endl;
+  		preStamp = msg->header.stamp;
+  		tran->clear();
+  		return;
+  	}
+  	preStamp = msg->header.stamp;
+  	try 
+  	{
+  		tran->transformPointCloud("/base_footprint", *msg, transformedPoints);
+    } 
+    catch (tf::TransformException& ex) 
+    {
+    	return;
+    }
+    
+  	sensor_msgs::PointCloud filtered_msg;
+  	// copy header info into new message
+		filtered_msg.header.frame_id = "/base_footprint";//msg->header.frame_id;
+		filtered_msg.header.stamp = ros::Time::now();
+		filtered_msg.header.seq = msg->header.seq;
+		// get table point cloud
+  	tableDetector.process_cloud(transformedPoints, &filtered_msg);
+  	//cout<<filtered_msg.header.seq<<endl;
+  	//cout<<"size: "<<filtered_msg.points.size()<<endl;
+		if (n.ok()) filteredPoints_pub.publish(filtered_msg);
+//		ros::spinOnce();
+/*    geometry_msgs::PointStamped m;
+  	for (int i = 0; i < msg->points.length(); i++) 
+  	{
+  		tran->transformPoint("/base_footprint", msg->points(i), m);
+  		transformedPoints.push_back();
+  	}*/
   }
 };
+
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "table_detector");
   ros::NodeHandle n;
-  
-  int i = 0;
-  double maxZ = 0;
-  double minZ = 100;
-  // find max and min z value
-  for (i = 0; i < pointCloudNum; i++) 
-  {
-  	if (pointCloud[i][2] > maxZ) maxZ = pointCloud[i][2];
-  	if (pointCloud[i][2] < minZ) minZ = pointCloud[i][2];
-  }
-  cout << maxZ << "; " << minZ << endl;
-  // count along z axis
-	int countAlongZ[14];
-	for (i=0;i<14;i++) countAlongZ[i]=0;
-	  
-	for (i = 0; i < pointCloudNum; i++) 
-  {
-		countAlongZ[int(pointCloud[i][2]*10)]++;
-	}
-	for (i=0;i<14;i++) cout << countAlongZ[i] << endl;
-
-	ros::Publisher filtered_points_pub = n.advertise<sensor_msgs::PointCloud>("filtered_points", 1000);
-	
-	// display new point cloud
-	int newPointNum = pointCloudNum-countAlongZ[6];
-	sensor_msgs::PointCloud filtered_msg;
-	filtered_msg.header.frame_id = "/wide_stereo_optical_frame";
-	geometry_msgs::Point32 p_;
-	sensor_msgs::ChannelFloat32 ch_;
-	int j=0;
-	for (i=0; i<pointCloudNum; i++)
-	{
-		if ((pointCloud[i][2]<0.6)||(pointCloud[i][2]>=0.7)) {
-			p_.x = pointCloud[i][0];
-			p_.y = pointCloud[i][1];
-			p_.z = pointCloud[i][2];
-			ch_.values.push_back(0.5);
-			filtered_msg.points.push_back(p_);
-			j++;
-			
-			if (j >= newPointNum) 
-			{
-				cout << "j>=newPointNum" << endl;
-				break;
-			}
-		}
-	}
-	ch_.name = "r";
-	filtered_msg.channels.push_back(ch_);
-	ch_.name = "g";
-	filtered_msg.channels.push_back(ch_);
-	ch_.name = "b";
-	filtered_msg.channels.push_back(ch_);
-	
-	ros::Rate rate(10);
-	tf::TransformListener lr;
-	tf::StampedTransform transform;
-	while (n.ok()) {
-		lr.lookupTransform("/base_footprint","/base_footprint",ros::Time(0),transform);
-		filtered_msg.header.stamp = transform.stamp_;
-		filtered_points_pub.publish(filtered_msg);
-		rate.sleep();
-	}
-	
-	ros::spinOnce();
-/*
-  tableDetectorNode tdn(n);
-  ros::spin();
-  */
-  
+  TableDetectorNode tdn(n);
+	ros::spin();
   return 0;
 }
