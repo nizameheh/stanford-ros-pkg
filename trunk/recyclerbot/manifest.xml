@@ -4,7 +4,7 @@
      recyclerbot
 
   </description>
-  <author></author>
+  <author>Jiahui Shi jiahui@stanford.edu, Morgan Quigley mquigley@cs.stanford.edu and Alan Asbeck aasbeck@stanford.edu</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/recyclerbot</url>
@@ -14,7 +14,8 @@
   <depend package="sensor_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="opencv2"/>
-  <depend package="camera1394"/>
+  <depend package="tf"/>
+  <!--depend package="camera1394"/-->
 
 </package>
 

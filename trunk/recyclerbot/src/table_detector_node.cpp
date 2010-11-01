@@ -5,6 +5,7 @@
 //#include "rosbag/bag.h"
 #include <tf/transform_listener.h>
 #include "recyclerbot/table_detector.h"
+#include "recyclerbot/STANN/rand.hpp"
 
 using namespace std;
 
@@ -80,6 +81,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "table_detector");
   ros::NodeHandle n;
+  __srand48__(static_cast<unsigned int>(time(0)));
   TableDetectorNode tdn(n);
 	ros::spin();
   return 0;

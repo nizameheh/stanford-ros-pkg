@@ -16,6 +16,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 include_directories(include)
 rosbuild_add_library(table_detector src/table_detector.cpp)
+#rosbuild_add_library(STANN src/STANN.cpp)
 
 rosbuild_add_executable(table_detector_node src/table_detector_node.cpp)
 target_link_libraries(table_detector_node table_detector)

@@ -1,4 +1,4 @@
 <launch>
 	<node pkg="rosbag" type="play" output="screen" name="data_play" args="-ql /home/jiahui/ros/test_data/bottles_data.bag -r 0.5"/>
-	<node pkg="recyclerbot" type="table_detector_node" output="screen" name="table_detector_node"/>
+	<!--node pkg="recyclerbot" type="table_detector_node" output="screen" name="table_detector_node"/-->
 </launch>
