@@ -1,0 +1,11 @@
+<package>
+  <description brief="locloc_erratic">
+    Low-cost localization experiments on an erratic robot
+  </description>
+  <author>Morgan Quigley and Brian Chung</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="wifi_sniffer"/> 
+</package>
+
+

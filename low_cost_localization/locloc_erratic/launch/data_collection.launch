@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="rosbag" type="rosbag" name="rosbag" args="record -o $(find locloc_erratic)/data/locloc_erratic_ tf wifi_scan_usb base_scan cmd_vel"/>  
+  <node pkg="erratic_player" type="erratic_player" output="screen" name="erratic"/>
+  <node pkg="sicktoolbox_wrapper" type="sicklms" output="screen" name="laser">
+    <param name="frame_id" value="/base_link_laser"/>
+    <remap from="scan" to="/base_scan"/>
+  </node>
+</launch>
