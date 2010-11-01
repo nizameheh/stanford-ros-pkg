@@ -24,10 +24,12 @@ sensor_msgs/ChannelFloat32[] channels
  
 void TableDetector::process_cloud(
 sensor_msgs::PointCloud& original_msg,
-sensor_msgs::PointCloud* filtered_msg)
+sensor_msgs::PointCloud* filtered_msg
+)
 {
-	std::vector<geometry_msgs::Point32>& pointCloud = original_msg.points;
+	vector<geometry_msgs::Point32>& pointCloud = original_msg.points;
   int i = 0;
+	int j = 0;  
   double maxZ = 0;
   double minZ = 100;
   int pointCloudNum = pointCloud.size();
@@ -63,7 +65,7 @@ sensor_msgs::PointCloud* filtered_msg)
 	ch0_.name = original_msg.channels[0].name;
 	ch1_.name = original_msg.channels[1].name;
 	ch2_.name = original_msg.channels[2].name;
-	int j = 0;
+
 	for (i = 0; i < pointCloudNum; i++)
 	{
 		//if ((pointCloud[i].z >= (double)maxSlot*2/100)&&(pointCloud[i].z < ((double)maxSlot+1)*2/100))
@@ -88,18 +90,15 @@ sensor_msgs::PointCloud* filtered_msg)
 	filtered_msg->channels.push_back(ch0_);
 	filtered_msg->channels.push_back(ch1_);
 	filtered_msg->channels.push_back(ch2_);
-	/*
-	ros::Rate rate(10);
-	tf::TransformListener lr;
-	tf::StampedTransform transform;
-	while (n.ok()) {
-		lr.lookupTransform("/base_footprint","/base_footprint",ros::Time(0),transform);
-		filtered_msg.header.stamp = transform.stamp_;
-		filtered_points_pub.publish(filtered_msg);
-		rate.sleep();
-	}
-	
-	ros::spinOnce();
-	*/
 
+	vector<long unsigned int> clusterId;
+	int k = 6000;
+	find_cluster(filtered_msg->points, k, clusterId);
+	for (i = 0; i < k; i++)
+	{
+		filtered_msg->channels[0].values[clusterId[i]] = 1;
+	//	filtered_msg->channels[1].values[clusterId[i]] = 0.5;
+	//	filtered_msg->channels[2].values[clusterId[i]] = 0.5;
+	}
 }
+
