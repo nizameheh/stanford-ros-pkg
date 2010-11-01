@@ -89,7 +89,7 @@ bool WifiSniffer::scan(std::vector<WifiSniff> &sniffs)
         }
         scan_buffer = scan_newbuf;
         wrq.u.data.pointer = scan_buffer;
-        wrq.u.data.flags = 0;
+        wrq.u.data.flags = IW_SCAN_ALL_ESSID | IW_SCAN_ALL_FREQ | IW_SCAN_ALL_MODE | IW_SCAN_ALL_RATE;
         wrq.u.data.length = scan_buflen;
         if (iw_get_ext(sock, iface.c_str(), SIOCGIWSCAN, &wrq) < 0)
         {
@@ -158,6 +158,19 @@ bool WifiSniffer::scan(std::vector<WifiSniff> &sniffs)
               sniff.signal_noise = iwe.u.qual.noise;
             }
             break;
+#if 0 
+          case IWEVCUSTOM:
+          {
+            if (iwe.u.data.pointer && iwe.u.data.length)
+            {
+              char custom_text[IW_CUSTOM_MAX+1];
+              memcpy(custom_text, iwe.u.data.pointer, iwe.u.data.length);
+              custom_text[iwe.u.data.length] = 0; // null terminate plz
+              printf("extra: [%s]\n", custom_text);
+              break;
+            }
+          }
+#endif
           case SIOCGIWESSID:
           {
             char essid[IW_ESSID_MAX_SIZE+1];
