@@ -22,7 +22,7 @@ public:
   ~TableDetector(){};
 	void process_cloud(sensor_msgs::PointCloud& original_msg,
 	                   sensor_msgs::PointCloud* filtered_msg,
-	                   visualization_msgs::Marker* marker_msg);
+	                   vector<visualization_msgs::Marker>& marker_msg);
 	void find_cluster(vector<geometry_msgs::Point32>& pointCloud, 
 										int k, 
 										vector<long unsigned int>& clusterId)
@@ -47,7 +47,7 @@ public:
 		  NN(&points[0], size);
 
 		int minDistance = 1000;
-		int minDisIter = 0;
+//		int minDisIter = 0;
 		vector<long unsigned int> tempCluster;
 		
 		for (i = 0; i < iter; i++)
@@ -67,6 +67,7 @@ public:
 	void find_cylinder(vector<geometry_msgs::Point32>& pointCloud,
 									   geometry_msgs::Point32& center,
 									   double& r,
+									   double& h,
 										 vector<long unsigned int>& clusterId);
 										 
 	void find_circle(geometry_msgs::Point32& p1, geometry_msgs::Point32& p2, geometry_msgs::Point32& p3,
@@ -85,6 +86,11 @@ public:
 	{
 		return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
 	}
+	
+	void fit_circle(vector<geometry_msgs::Point32>& pointCloud,
+									geometry_msgs::Point32& center,
+									double& r);
+	
 };
 
 #endif

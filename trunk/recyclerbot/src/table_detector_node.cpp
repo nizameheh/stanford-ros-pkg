@@ -7,7 +7,22 @@
 #include "recyclerbot/table_detector.h"
 #include "recyclerbot/STANN/rand.hpp"
 
+#define COLORNUM 10
+
 using namespace std;
+
+float color_array[COLORNUM][4] = {
+{1.0, 0.0, 0.0, 1.0}, // red
+{0.0, 1.0, 0.0, 1.0}, // green
+{0.0, 0.0, 1.0, 1.0}, // blue
+{1.0, 1.0, 0.0, 1.0}, // ?
+{0.0, 1.0, 1.0, 1.0}, // ?
+{1.0, 0.0, 1.0, 1.0}, // ?
+{0.5, 0.8, 0.2, 1.0}, // ?
+{0.2, 0.5, 0.8, 1.0}, // ?
+{0.8, 0.2, 0.5, 1.0}, // ?
+{0.5, 0.5, 0.5, 1.0}  // ?
+};
 
 class TableDetectorNode
 {
@@ -19,16 +34,26 @@ public:
 	tf::TransformListener* tran; // narrow textured to Footprint
 	ros::Time preStamp;
 	TableDetector tableDetector;
+	
+	std_msgs::ColorRGBA colorArray[COLORNUM];
   
   TableDetectorNode(ros::NodeHandle &_n) : n(_n)
   {
     filteredPoints_pub = n.advertise<sensor_msgs::PointCloud>("/filtered_points", 1);
-    cylMarker_pub = n.advertise<visualization_msgs::Marker>("/bottle_marker", 3);
+    cylMarker_pub = n.advertise<visualization_msgs::Marker>("/bottle_marker", 10);
     ntPoint_sub = n.subscribe<sensor_msgs::PointCloud>("/narrow_stereo_textured/points", 1, &TableDetectorNode::nt_cb, this);
     tran = new tf::TransformListener(n, ros::Duration(2.0));
     preStamp = ros::Time::now();
 //    ros::Timer timer = n.createTimer(ros::Duration(1.0), boost::bind(&TableDetectorNode::transformPoint, boost::ref(listener)));
 
+		// initialize color array
+		for (int i = 0; i < COLORNUM; i++)
+		{
+			colorArray[i].r = color_array[i][0];
+			colorArray[i].g = color_array[i][1];
+			colorArray[i].b = color_array[i][2];
+			colorArray[i].a = color_array[i][3];
+		}
   }
   
   ~TableDetectorNode()
@@ -42,6 +67,7 @@ public:
 
 void TableDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // narrow textured call back
 {
+	int cylNum = 3;
 	// tranform point cloud into /base_footprint frame
 	sensor_msgs::PointCloud transformedPoints;
 	if (preStamp >= msg->header.stamp)
@@ -61,16 +87,22 @@ void TableDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // n
   	return;
   }
   
+	int i = 0;
+	
 	sensor_msgs::PointCloud filtered_msg;
-	visualization_msgs::Marker marker_msg[3];
+	vector<visualization_msgs::Marker> marker_msg;
+	for (i = 0; i < cylNum; i++) 
+	{
+		visualization_msgs::Marker marker_;
+		marker_msg.push_back(marker_);
+	}
 	
 	// copy header info into new message
 	filtered_msg.header.frame_id = "/base_footprint";//msg->header.frame_id;
 	filtered_msg.header.stamp = ros::Time::now();
 	filtered_msg.header.seq = msg->header.seq;
 	
-	int i = 0;
-	for (i = 0; i < 3; i++)
+	for (i = 0; i < cylNum; i++)
 	{
 		marker_msg[i].header.frame_id = "/base_footprint";
 		marker_msg[i].header.stamp = ros::Time::now();
@@ -78,9 +110,7 @@ void TableDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // n
 		marker_msg[i].id = i;
 		marker_msg[i].type = visualization_msgs::Marker::CYLINDER;
 		marker_msg[i].action = visualization_msgs::Marker::ADD;
-		marker_msg[i].color.r = (i == 0 ? 1.0f:0.0f);
-		marker_msg[i].color.g = (i == 1 ? 1.0f:0.0f);
-		marker_msg[i].color.b = (i == 2 ? 1.0f:0.0f);
+		marker_msg[i].color = colorArray[i];
 		marker_msg[i].color.a = 0.5;
 		marker_msg[i].lifetime = ros::Duration();
 	}
@@ -91,10 +121,7 @@ void TableDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // n
 	if (n.ok()) 
 	{
 		filteredPoints_pub.publish(filtered_msg);
-		for (i = 0; i < 3; i++) cylMarker_pub.publish(marker_msg[i]);
-		//cylMarker_pub.publish(marker_msg[0]);
-		//cylMarker_pub.publish(marker_msg[2]);
-		//cylMarker_pub.publish(marker_msg[1]);
+		for (i = 0; i < cylNum; i++) cylMarker_pub.publish(marker_msg[i]);
 	}
 
 }
