@@ -11,17 +11,46 @@
 #include "recyclerbot/STANN/rand.hpp"
 #include "math.h"
 
+#define MAX_CYL_NUM 10
+#define CYL_POINT_THRESH 2000
+#define COLORNUM 10
+
+float color_array[COLORNUM][4] = {
+{1.0, 0.0, 0.0, 1.0}, // red
+{0.0, 1.0, 0.0, 1.0}, // green
+{0.0, 0.0, 1.0, 1.0}, // blue
+{1.0, 1.0, 0.0, 1.0}, // ?
+{0.0, 1.0, 1.0, 1.0}, // ?
+{1.0, 0.0, 1.0, 1.0}, // ?
+{0.5, 0.8, 0.2, 1.0}, // ?
+{0.2, 0.5, 0.8, 1.0}, // ?
+{0.8, 0.2, 0.5, 1.0}, // ?
+{0.5, 0.5, 0.5, 1.0}  // ?
+};
+
+
 using namespace std;
 
 typedef reviver::dpoint<double, 3> Point;
 
+struct cylinder
+{
+	geometry_msgs::Point32 center;
+	double radius;
+	double height;
+};
+
 class TableDetector
 {
 public:
+	std_msgs::ColorRGBA colorArray[COLORNUM];
+	
   TableDetector();
   ~TableDetector(){};
-	void process_cloud(sensor_msgs::PointCloud& original_msg,
-	                   sensor_msgs::PointCloud* filtered_msg,
+	void process_cloud(sensor_msgs::PointCloud& nt_msg,
+										 sensor_msgs::PointCloud& ws_msg,
+										 int& cylNum,
+	                   vector<sensor_msgs::PointCloud>& filtered_msgs,
 	                   vector<visualization_msgs::Marker>& marker_msg);
 	void find_cluster(vector<geometry_msgs::Point32>& pointCloud, 
 										int k, 
