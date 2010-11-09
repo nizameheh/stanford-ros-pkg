@@ -60,7 +60,8 @@ void TableDetectorNode::ws_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // w
 {
 	wsPoints = *msg;
 }
-  
+
+
 void TableDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // narrow textured call back
 {
 	if (wsPoints.points.empty()) return;
@@ -98,7 +99,7 @@ void TableDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // n
 	
 	if (n.ok()) 
 	{
-		for (i = 0; i < filtered_msgs.size(); i++) 
+		for (i = 0; i < int(filtered_msgs.size()); i++) 
 		{
 			// copy header info into new message
 			filtered_msgs[i].header.frame_id = "/base_footprint";
@@ -106,7 +107,7 @@ void TableDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // n
 			filtered_msgs[i].header.seq = msg->header.seq;
 			filteredPoints_pub.publish(filtered_msgs[i]);
 		}
-		for (i = 0; i < marker_msgs.size(); i++) cylMarker_pub.publish(marker_msgs[i]);
+		for (i = 0; i < int(marker_msgs.size()); i++) cylMarker_pub.publish(marker_msgs[i]);
 	}
 
 }

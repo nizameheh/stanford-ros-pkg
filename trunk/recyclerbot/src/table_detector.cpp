@@ -47,8 +47,10 @@ vector<visualization_msgs::Marker>& marker_msgs
   int pointNum = pointCloud.size();
   int* assigned = NULL;
   
+	////////////////////////////////////////////////////////////
 	// -------------------FIRST STEP--------------------------
 	// remove table
+	////////////////////////////////////////////////////////////
 	
   // find max and min z value
   for (i = 0; i < pointNum; i++) 
@@ -78,7 +80,6 @@ vector<visualization_msgs::Marker>& marker_msgs
 	}
 	//cout<<"maxSlot: "<<maxSlot<<endl;
 	
-	//int newPointNum = countAlongZ[maxSlot];
 	sensor_msgs::ChannelFloat32 ch0_, ch1_, ch2_;
 	ch0_.name = nt_msg.channels[0].name;
 	ch1_.name = nt_msg.channels[1].name;
@@ -93,35 +94,23 @@ vector<visualization_msgs::Marker>& marker_msgs
 			ch0_.values.push_back(nt_msg.channels[0].values[i]);
 			ch1_.values.push_back(nt_msg.channels[1].values[i]);
 			ch2_.values.push_back(nt_msg.channels[2].values[i]);
-			pointsAboveTable.points.push_back(pointCloud[i]);
-			j++;
-			
+			pointsAboveTable.points.push_back(pointCloud[i]);			
 		}
 	}
 	pointsAboveTable.channels.push_back(ch0_);
 	pointsAboveTable.channels.push_back(ch1_);
 	pointsAboveTable.channels.push_back(ch2_);
-
-	//filtered_msgs.push_back(pointsAboveTable);
 	
+	
+	////////////////////////////////////////////////////////////
 	// -------------------SECOND STEP--------------------------
-	// find point cloud after table removed
+	// find cylinders after table removed
+	////////////////////////////////////////////////////////////
 
-	// now start to find cylinders!
 	vector<long unsigned int> clusterId;
-	geometry_msgs::Point32 center;
-	double radius = 0;
-	double height = 0;
 	
 //	int k = 6000;
 //	find_cluster(filtered_msg->points, k, clusterId);
-
-	ch0_.name = 'r';
-	ch1_.name = 'g';
-	ch2_.name = 'b';
-	ch0_.values.clear();
-	ch1_.values.clear();
-	ch2_.values.clear();
 
 	vector<geometry_msgs::Point32> tempCloud;
 	sensor_msgs::PointCloud cylCloud;
@@ -131,10 +120,8 @@ vector<visualization_msgs::Marker>& marker_msgs
 	for (int cylId = 0; cylId < MAX_CYL_NUM; cylId++)
 	{
 		// find first bottle
-		find_cylinder(pointsAboveTable.points, center, radius, height, clusterId);
-		cylinder_.center = center;
-		cylinder_.radius = radius;
-		cylinder_.height = height;
+		find_cylinder(pointsAboveTable.points, cylinder_, clusterId);
+		
 		cylinders.push_back(cylinder_);
 		
 		// if cylinder is too small, ignore and stop searching
@@ -144,18 +131,16 @@ vector<visualization_msgs::Marker>& marker_msgs
 			break;
 		}
 		
-		// set channels
+		// construct clouds
 		int filterPointNum = pointsAboveTable.points.size();
+		
 		if (assigned != NULL)	delete assigned;
 		assigned = new int[filterPointNum];
 		for (i = 0; i < filterPointNum; i++) assigned[i] = 0;
 	
-		for (i = 0; i < (int)(clusterId.size()); i++)
+		for (i = 0; i < cylinder_.pointNum; i++)
 		{
 			cylCloud.points.push_back(pointsAboveTable.points[clusterId[i]]);
-			ch0_.values.push_back(colorArray[cylId].r);
-			ch1_.values.push_back(colorArray[cylId].g);
-			ch2_.values.push_back(colorArray[cylId].b);
 			assigned[clusterId[i]] = 1;
 		}
 		
@@ -172,59 +157,86 @@ vector<visualization_msgs::Marker>& marker_msgs
 		pointsAboveTable.points = tempCloud;
 	}
 	
-	cylCloud.channels.push_back(ch0_);
-	cylCloud.channels.push_back(ch1_);
-	cylCloud.channels.push_back(ch2_);
 	
 	cout<<"remaining points: "<<tempCloud.size()<<endl;
 	cout<<"-----------------------------------------"<<endl;
 	
 	
+	////////////////////////////////////////////////////////////
 	// -------------------THIRD STEP--------------------------
 	// find bottle cap
+	////////////////////////////////////////////////////////////
 	
 	vector<geometry_msgs::Point32>& wsPointCloud = ws_msg.points;
-	sensor_msgs::PointCloud capPoints;
 	int wsSize = wsPointCloud.size();
 	geometry_msgs::Point32 p;
 	
-	/*
-	ch0_.values.clear();
-	ch1_.values.clear();
-	ch2_.values.clear();
-	ch0_.name = ws_msg.channels[0].name;
-	ch1_.name = ws_msg.channels[1].name;
-	ch2_.name = ws_msg.channels[2].name;
-	sensor_msgs::PointCloud wsPointsAboveTable;
-	*/
+	vector<sensor_msgs::PointCloud> caps;
+	sensor_msgs::PointCloud cap;
+	for (i = 0; i < cylNum; i++) caps.push_back(cap);
 	
 	for (i = 0; i < wsSize; i++)
 	{
 		p = wsPointCloud[i];
-		for (int j = 0; j < cylNum; j++)
+		for (j = 0; j < cylNum; j++)
 		{
 			cylinder_ = cylinders[j];
-			if ((p.z > cylinder_.center.z + cylinder_.height/2) && (distance(cylinder_.center, p) < cylinder_.radius))
+			if ((p.z > cylinder_.center.z + cylinder_.height / 2) && (distance(cylinder_.center, p) < cylinder_.radius))
 			{
-				cylCloud.points.push_back(p);
-				cylCloud.channels[0].values.push_back(colorArray[j].r);
-				cylCloud.channels[1].values.push_back(colorArray[j].g);
-				cylCloud.channels[2].values.push_back(colorArray[j].b);
-				
+				caps[j].points.push_back(p);	
 			}
 		}
 	}
 	
-	filtered_msgs.push_back(cylCloud);
-	
+	////////////////////////////////////////////////////////////
 	// -------------------FORTH STEP--------------------------
-	// distinguish between plastic bottles (about 22cm) and glass bottles (about 20 cm)
+	// distinguish between cans            (about 13cm),
+	//                     glass bottles   (about 20cm)
+	//                     plastic bottles (about 22cm)
+	////////////////////////////////////////////////////////////
+	
+	for (i = 0; i < cylNum; i++)
+	{
+		// find the height of upper part
+		cylinder_ = cylinders[i];
+		double topZ = cylinder_.center.z + cylinder_.height / 2;
+		for (j = 0; j < int(caps[i].points.size()); j++)
+		{
+			if (caps[i].points[j].z > topZ) topZ = caps[i].points[j].z;
+		}
+		
+		double height_ = topZ - tabletop;
+		
+		if (height_ < 0.15) cylinders[i].classId = 0;
+		else if (height_ < 0.21) cylinders[i].classId = 1;
+		else cylinders[i].classId = 2;
+	}
+	
+	////////////////////////////////////////////////////////////
+	// -------------------FIFTH STEP--------------------------
+	// draw markers and color the point cloud
+	////////////////////////////////////////////////////////////
+	
+	ch0_.name = 'r';
+	ch1_.name = 'g';
+	ch2_.name = 'b';
+	ch0_.values.clear();
+	ch1_.values.clear();
+	ch2_.values.clear();
+	
+	cylCloud.channels.push_back(ch0_);
+	cylCloud.channels.push_back(ch1_);
+	cylCloud.channels.push_back(ch2_);
+	
+	std_msgs::ColorRGBA color_;
+	
 	for (i = 0; i < cylNum; i++)
 	{
 		// construct and configure a new marker
 		visualization_msgs::Marker marker_;
 		
 		cylinder_ = cylinders[i];
+		color_ = colorArray[cylinders[i].classId];
 			
 		marker_.header.frame_id = "/base_footprint";
 		marker_.header.stamp = ros::Time::now();
@@ -232,7 +244,7 @@ vector<visualization_msgs::Marker>& marker_msgs
 		marker_.id = i;
 		marker_.type = visualization_msgs::Marker::CYLINDER;
 		marker_.action = visualization_msgs::Marker::ADD;
-		marker_.color = colorArray[i];
+		marker_.color = color_;
 		marker_.color.a = 0.5;
 		marker_.lifetime = ros::Duration();
 		marker_.pose.position.x = cylinder_.center.x;
@@ -247,15 +259,34 @@ vector<visualization_msgs::Marker>& marker_msgs
 		marker_.scale.z = cylinder_.height;
 		
 		marker_msgs.push_back(marker_);
+		
+		for (j = 0; j < cylinder_.pointNum; j++)
+		{
+			cylCloud.channels[0].values.push_back(color_.r);
+			cylCloud.channels[1].values.push_back(color_.g);
+			cylCloud.channels[2].values.push_back(color_.b);
+		}
+		
 	}
+	for (i = 0; i < cylNum; i++)
+	{
+		color_ = colorArray[cylinders[i].classId];
+		for (j = 0; j < int(caps[i].points.size()); j++)
+		{
+			cylCloud.points.push_back(caps[i].points[j]);
+			cylCloud.channels[0].values.push_back(color_.r);
+			cylCloud.channels[1].values.push_back(color_.g);
+			cylCloud.channels[2].values.push_back(color_.b);
+		}
+	}
+	
+	filtered_msgs.push_back(cylCloud);
 }
 
 
 void TableDetector::find_cylinder(
 vector<geometry_msgs::Point32>& pointCloud,
-geometry_msgs::Point32& center,
-double& r,
-double& h,
+cylinder& cylinder_,
 vector<long unsigned int>& clusterId)
 {
 	// RANSAC on 3 points to fit circle model
@@ -270,6 +301,8 @@ vector<long unsigned int>& clusterId)
 	double error = 0;
 	double margin = 0.005;
 	int size = pointCloud.size();
+	geometry_msgs::Point32 center;
+	double r;
 	
 	for (i = 0; i < iter; i++)
 	{
@@ -332,7 +365,10 @@ vector<long unsigned int>& clusterId)
 		}
 	}
 	center.z = (topz + bottomz) / 2;
-	h = topz - bottomz;
+	cylinder_.height = topz - bottomz;
+	cylinder_.center = center;
+	cylinder_.radius = r;
+	cylinder_.pointNum = clusterId.size();
 }
 
 void TableDetector::fit_circle(
