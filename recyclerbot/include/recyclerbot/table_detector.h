@@ -38,6 +38,8 @@ struct cylinder
 	geometry_msgs::Point32 center;
 	double radius;
 	double height;
+	int pointNum;
+	int classId; // 0 - can, 1 - glass bottle, 2 - plastic bottle
 };
 
 class TableDetector
@@ -94,9 +96,7 @@ public:
 	}
 	
 	void find_cylinder(vector<geometry_msgs::Point32>& pointCloud,
-									   geometry_msgs::Point32& center,
-									   double& r,
-									   double& h,
+									   cylinder& cylinder_,
 										 vector<long unsigned int>& clusterId);
 										 
 	void find_circle(geometry_msgs::Point32& p1, geometry_msgs::Point32& p2, geometry_msgs::Point32& p3,
