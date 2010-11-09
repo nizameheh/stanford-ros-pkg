@@ -1,10 +1,18 @@
 #include "recyclerbot/table_detector.h"
+#define RESOLUTION 0.02
 
 using namespace std;
 
 TableDetector::TableDetector()
 {
-	
+	// initialize color array
+	for (int i = 0; i < COLORNUM; i++)
+	{
+		colorArray[i].r = color_array[i][0];
+		colorArray[i].g = color_array[i][1];
+		colorArray[i].b = color_array[i][2];
+		colorArray[i].a = color_array[i][3];
+	}
 }
 
 /*
@@ -23,38 +31,45 @@ sensor_msgs/ChannelFloat32[] channels
 */
  
 void TableDetector::process_cloud(
-sensor_msgs::PointCloud& original_msg,
-sensor_msgs::PointCloud* filtered_msg,
-vector<visualization_msgs::Marker>& marker_msg
+sensor_msgs::PointCloud& nt_msg,
+sensor_msgs::PointCloud& ws_msg,
+int& cylNum,
+vector<sensor_msgs::PointCloud>& filtered_msgs,
+vector<visualization_msgs::Marker>& marker_msgs
 )
 {
-	vector<geometry_msgs::Point32>& pointCloud = original_msg.points;
+	vector<geometry_msgs::Point32>& pointCloud = nt_msg.points;
 	sensor_msgs::PointCloud pointsAboveTable;
   int i = 0;
 	int j = 0;  
   double maxZ = 0;
   double minZ = 100;
-  int pointCloudNum = pointCloud.size();
+  int pointNum = pointCloud.size();
   int* assigned = NULL;
   
+	// -------------------FIRST STEP--------------------------
+	// remove table
+	
   // find max and min z value
-  for (i = 0; i < pointCloudNum; i++) 
+  for (i = 0; i < pointNum; i++) 
   {
   	if (pointCloud[i].z > maxZ) maxZ = pointCloud[i].z;
   	if (pointCloud[i].z < minZ) minZ = pointCloud[i].z;
   }
   //cout << maxZ << "; " << minZ << endl;
   // count along z axis
-	int countAlongZ[50];
-	for (i = 0; i < 50; i++) countAlongZ[i]=0;
+	int* countAlongZ;
+	int slotNum = int((maxZ - minZ) / RESOLUTION) + 1;
+	countAlongZ = new int[slotNum];
+	for (i = 0; i < slotNum; i++) countAlongZ[i] = 0;
 	  
-	for (i = 0; i < pointCloudNum; i++) 
+	for (i = 0; i < pointNum; i++) 
   {
-		countAlongZ[int(pointCloud[i].z*100/2)]++;
+		countAlongZ[int((pointCloud[i].z - minZ) / RESOLUTION)]++;
 	}
-	//for (i = 0; i < 50; i++) cout<<i<<": " << countAlongZ[i] << endl;
+	//for (i = 0; i < slotNum; i++) cout<<i<<": " << countAlongZ[i] << endl;
 	int maxSlot = 0;
-	for (i = 0; i < 50; i++) 
+	for (i = 0; i < slotNum; i++) 
 	{
 		if (countAlongZ[i] > countAlongZ[maxSlot])
 		{
@@ -62,26 +77,23 @@ vector<visualization_msgs::Marker>& marker_msg
 		}
 	}
 	//cout<<"maxSlot: "<<maxSlot<<endl;
-	// find filtered point cloud
-	int newPointNum = countAlongZ[maxSlot];
-	geometry_msgs::Point32 p_;
+	
+	//int newPointNum = countAlongZ[maxSlot];
 	sensor_msgs::ChannelFloat32 ch0_, ch1_, ch2_;
-	ch0_.name = original_msg.channels[0].name;
-	ch1_.name = original_msg.channels[1].name;
-	ch2_.name = original_msg.channels[2].name;
+	ch0_.name = nt_msg.channels[0].name;
+	ch1_.name = nt_msg.channels[1].name;
+	ch2_.name = nt_msg.channels[2].name;
 
-	for (i = 0; i < pointCloudNum; i++)
+	double tabletop = ((double)maxSlot + 1) * RESOLUTION + minZ;
+	for (i = 0; i < pointNum; i++)
 	{
 		//if ((pointCloud[i].z >= (double)maxSlot*2/100)&&(pointCloud[i].z < ((double)maxSlot+1)*2/100))
-		if (pointCloud[i].z >= ((double)maxSlot + 1) * 2 / 100)
+		if (pointCloud[i].z >= tabletop)
 		{
-			p_.x = pointCloud[i].x;
-			p_.y = pointCloud[i].y;
-			p_.z = pointCloud[i].z;
-			ch0_.values.push_back(original_msg.channels[0].values[i]);
-			ch1_.values.push_back(original_msg.channels[1].values[i]);
-			ch2_.values.push_back(original_msg.channels[2].values[i]);
-			pointsAboveTable.points.push_back(p_);
+			ch0_.values.push_back(nt_msg.channels[0].values[i]);
+			ch1_.values.push_back(nt_msg.channels[1].values[i]);
+			ch2_.values.push_back(nt_msg.channels[2].values[i]);
+			pointsAboveTable.points.push_back(pointCloud[i]);
 			j++;
 			
 		}
@@ -89,6 +101,11 @@ vector<visualization_msgs::Marker>& marker_msg
 	pointsAboveTable.channels.push_back(ch0_);
 	pointsAboveTable.channels.push_back(ch1_);
 	pointsAboveTable.channels.push_back(ch2_);
+
+	//filtered_msgs.push_back(pointsAboveTable);
+	
+	// -------------------SECOND STEP--------------------------
+	// find point cloud after table removed
 
 	// now start to find cylinders!
 	vector<long unsigned int> clusterId;
@@ -107,21 +124,25 @@ vector<visualization_msgs::Marker>& marker_msg
 	ch2_.values.clear();
 
 	vector<geometry_msgs::Point32> tempCloud;
-	for (int cylId = 0; cylId < 3; cylId++)
+	sensor_msgs::PointCloud cylCloud;
+	vector<cylinder> cylinders;
+	cylinder cylinder_;
+	
+	for (int cylId = 0; cylId < MAX_CYL_NUM; cylId++)
 	{
 		// find first bottle
 		find_cylinder(pointsAboveTable.points, center, radius, height, clusterId);
-		// set cylinder marker
-		marker_msg[cylId].pose.position.x = center.x;
-		marker_msg[cylId].pose.position.y = center.y;
-		marker_msg[cylId].pose.position.z = center.z;
-		marker_msg[cylId].pose.orientation.x = 0.0;
-		marker_msg[cylId].pose.orientation.y = 0.0;
-		marker_msg[cylId].pose.orientation.z = 0.0;
-		marker_msg[cylId].pose.orientation.w = 1.0;
-		marker_msg[cylId].scale.x = radius * 2;
-		marker_msg[cylId].scale.y = radius * 2;
-		marker_msg[cylId].scale.z = height;
+		cylinder_.center = center;
+		cylinder_.radius = radius;
+		cylinder_.height = height;
+		cylinders.push_back(cylinder_);
+		
+		// if cylinder is too small, ignore and stop searching
+		if (clusterId.size() < CYL_POINT_THRESH) 
+		{
+			cylNum = cylId;
+			break;
+		}
 		
 		// set channels
 		int filterPointNum = pointsAboveTable.points.size();
@@ -129,12 +150,12 @@ vector<visualization_msgs::Marker>& marker_msg
 		assigned = new int[filterPointNum];
 		for (i = 0; i < filterPointNum; i++) assigned[i] = 0;
 	
-		for (i = 0; i < clusterId.size(); i++)
+		for (i = 0; i < (int)(clusterId.size()); i++)
 		{
-			filtered_msg->points.push_back(pointsAboveTable.points[clusterId[i]]);
-			ch0_.values.push_back(marker_msg[cylId].color.r);
-			ch1_.values.push_back(marker_msg[cylId].color.g);
-			ch2_.values.push_back(marker_msg[cylId].color.b);
+			cylCloud.points.push_back(pointsAboveTable.points[clusterId[i]]);
+			ch0_.values.push_back(colorArray[cylId].r);
+			ch1_.values.push_back(colorArray[cylId].g);
+			ch2_.values.push_back(colorArray[cylId].b);
 			assigned[clusterId[i]] = 1;
 		}
 		
@@ -144,24 +165,98 @@ vector<visualization_msgs::Marker>& marker_msg
 		{
 			if (assigned[i] == 0) tempCloud.push_back(pointsAboveTable.points[i]);
 		}
-	
+		
+		cout<<cylId<<" cylinder: "<<clusterId.size()<<endl;
+		
 		pointsAboveTable.points.clear();
 		pointsAboveTable.points = tempCloud;
 	}
 	
-	filtered_msg->channels.push_back(ch0_);
-	filtered_msg->channels.push_back(ch1_);
-	filtered_msg->channels.push_back(ch2_);	
+	cylCloud.channels.push_back(ch0_);
+	cylCloud.channels.push_back(ch1_);
+	cylCloud.channels.push_back(ch2_);
 	
 	cout<<"remaining points: "<<tempCloud.size()<<endl;
+	cout<<"-----------------------------------------"<<endl;
 	
+	
+	// -------------------THIRD STEP--------------------------
+	// find bottle cap
+	
+	vector<geometry_msgs::Point32>& wsPointCloud = ws_msg.points;
+	sensor_msgs::PointCloud capPoints;
+	int wsSize = wsPointCloud.size();
+	geometry_msgs::Point32 p;
+	
+	/*
+	ch0_.values.clear();
+	ch1_.values.clear();
+	ch2_.values.clear();
+	ch0_.name = ws_msg.channels[0].name;
+	ch1_.name = ws_msg.channels[1].name;
+	ch2_.name = ws_msg.channels[2].name;
+	sensor_msgs::PointCloud wsPointsAboveTable;
+	*/
+	
+	for (i = 0; i < wsSize; i++)
+	{
+		p = wsPointCloud[i];
+		for (int j = 0; j < cylNum; j++)
+		{
+			cylinder_ = cylinders[j];
+			if ((p.z > cylinder_.center.z + cylinder_.height/2) && (distance(cylinder_.center, p) < cylinder_.radius))
+			{
+				cylCloud.points.push_back(p);
+				cylCloud.channels[0].values.push_back(colorArray[j].r);
+				cylCloud.channels[1].values.push_back(colorArray[j].g);
+				cylCloud.channels[2].values.push_back(colorArray[j].b);
+				
+			}
+		}
+	}
+	
+	filtered_msgs.push_back(cylCloud);
+	
+	// -------------------FORTH STEP--------------------------
+	// distinguish between plastic bottles (about 22cm) and glass bottles (about 20 cm)
+	for (i = 0; i < cylNum; i++)
+	{
+		// construct and configure a new marker
+		visualization_msgs::Marker marker_;
+		
+		cylinder_ = cylinders[i];
+			
+		marker_.header.frame_id = "/base_footprint";
+		marker_.header.stamp = ros::Time::now();
+		marker_.ns = "bottle";
+		marker_.id = i;
+		marker_.type = visualization_msgs::Marker::CYLINDER;
+		marker_.action = visualization_msgs::Marker::ADD;
+		marker_.color = colorArray[i];
+		marker_.color.a = 0.5;
+		marker_.lifetime = ros::Duration();
+		marker_.pose.position.x = cylinder_.center.x;
+		marker_.pose.position.y = cylinder_.center.y;
+		marker_.pose.position.z = cylinder_.center.z;
+		marker_.pose.orientation.x = 0.0;
+		marker_.pose.orientation.y = 0.0;
+		marker_.pose.orientation.z = 0.0;
+		marker_.pose.orientation.w = 1.0;
+		marker_.scale.x = cylinder_.radius * 2;
+		marker_.scale.y = cylinder_.radius * 2;
+		marker_.scale.z = cylinder_.height;
+		
+		marker_msgs.push_back(marker_);
+	}
 }
 
-void TableDetector::find_cylinder(vector<geometry_msgs::Point32>& pointCloud,
-								   geometry_msgs::Point32& center,
-								   double& r,
-								   double& h,
-									 vector<long unsigned int>& clusterId)
+
+void TableDetector::find_cylinder(
+vector<geometry_msgs::Point32>& pointCloud,
+geometry_msgs::Point32& center,
+double& r,
+double& h,
+vector<long unsigned int>& clusterId)
 {
 	// RANSAC on 3 points to fit circle model
 	int iter = 1000;
@@ -206,7 +301,7 @@ void TableDetector::find_cylinder(vector<geometry_msgs::Point32>& pointCloud,
 		}
 	}
 	
-	// fit the points to a cylinder
+	// fit the points to a cylinder, twice
 	for (int fitTime = 0; fitTime < 2; fitTime++)
 	{
 		vector<geometry_msgs::Point32> cylPoints;
@@ -240,9 +335,10 @@ void TableDetector::find_cylinder(vector<geometry_msgs::Point32>& pointCloud,
 	h = topz - bottomz;
 }
 
-void TableDetector::fit_circle(vector<geometry_msgs::Point32>& pointCloud,
-															 geometry_msgs::Point32& center,
-															 double& r)
+void TableDetector::fit_circle(
+vector<geometry_msgs::Point32>& pointCloud,
+geometry_msgs::Point32& center,
+double& r)
 {
 	int size = pointCloud.size();
 	int i = 0;
@@ -256,18 +352,20 @@ void TableDetector::fit_circle(vector<geometry_msgs::Point32>& pointCloud,
 	double X1Y1=0;
 	double X1Y2 = 0;
 	double X2Y1 = 0;
+	geometry_msgs::Point32 p;
 	
 	for (i = 0; i < size; i++)
 	{
-		X1 = X1 + pointCloud[i].x;
-		Y1 = Y1 + pointCloud[i].y;
-		X2 = X2 + pointCloud[i].x*pointCloud[i].x;
-		Y2 = Y2 + pointCloud[i].y*pointCloud[i].y;
-		X3 = X3 + pointCloud[i].x*pointCloud[i].x*pointCloud[i].x;
-		Y3 = Y3 + pointCloud[i].y*pointCloud[i].y*pointCloud[i].y;
-		X1Y1 = X1Y1 + pointCloud[i].x*pointCloud[i].y;
-		X1Y2 = X1Y2 + pointCloud[i].x*pointCloud[i].y*pointCloud[i].y;
-		X2Y1 = X2Y1 + pointCloud[i].x*pointCloud[i].x*pointCloud[i].y;
+		p = pointCloud[i];
+		X1 = X1 + p.x;
+		Y1 = Y1 + p.y;
+		X2 = X2 + p.x*p.x;
+		Y2 = Y2 + p.y*p.y;
+		X3 = X3 + p.x*p.x*p.x;
+		Y3 = Y3 + p.y*p.y*p.y;
+		X1Y1 = X1Y1 + p.x*p.y;
+		X1Y2 = X1Y2 + p.x*p.y*p.y;
+		X2Y1 = X2Y1 + p.x*p.x*p.y;
 	}
 	
 	double C,D,E,G,H,N;
