@@ -1,5 +1,5 @@
 #include "recyclerbot/table_detector.h"
-#define RESOLUTION 0.02
+#define RESOLUTION 0.01
 
 using namespace std;
 
@@ -58,7 +58,7 @@ vector<visualization_msgs::Marker>& marker_msgs
   	if (pointCloud[i].z > maxZ) maxZ = pointCloud[i].z;
   	if (pointCloud[i].z < minZ) minZ = pointCloud[i].z;
   }
-  //cout << maxZ << "; " << minZ << endl;
+  
   // count along z axis
 	int* countAlongZ;
 	int slotNum = int((maxZ - minZ) / RESOLUTION) + 1;
@@ -69,7 +69,8 @@ vector<visualization_msgs::Marker>& marker_msgs
   {
 		countAlongZ[int((pointCloud[i].z - minZ) / RESOLUTION)]++;
 	}
-	//for (i = 0; i < slotNum; i++) cout<<i<<": " << countAlongZ[i] << endl;
+	
+	// find the slot with maximum points
 	int maxSlot = 0;
 	for (i = 0; i < slotNum; i++) 
 	{
@@ -80,16 +81,39 @@ vector<visualization_msgs::Marker>& marker_msgs
 	}
 	//cout<<"maxSlot: "<<maxSlot<<endl;
 	
+	// find the scope of table
+	double tableMinX = 100;
+	double tableMinY = 100;
+	double tableMaxX = -100;
+	double tableMaxY = -100;
+	
+	
+	for (i = 0; i < pointNum; i++)
+	{
+		if (int((pointCloud[i].z - minZ) / RESOLUTION) == maxSlot)
+		{
+			if (pointCloud[i].x > tableMaxX) tableMaxX = pointCloud[i].x;
+			if (pointCloud[i].x < tableMinX) tableMinX = pointCloud[i].x;
+			if (pointCloud[i].y > tableMaxY) tableMaxY = pointCloud[i].y;
+			if (pointCloud[i].y < tableMinY) tableMinY = pointCloud[i].y;
+		}
+	}
+	// adjust the boundary by leaving a margin
+	tableMaxX -= 0.03;
+	tableMinX += 0.03;
+	tableMaxY -= 0.03;
+	tableMinY += 0.03;
+	
 	sensor_msgs::ChannelFloat32 ch0_, ch1_, ch2_;
 	ch0_.name = nt_msg.channels[0].name;
 	ch1_.name = nt_msg.channels[1].name;
 	ch2_.name = nt_msg.channels[2].name;
 
-	double tabletop = ((double)maxSlot + 1) * RESOLUTION + minZ;
+	double tabletop = ((double)maxSlot + 2) * RESOLUTION + minZ;
+	
 	for (i = 0; i < pointNum; i++)
 	{
-		//if ((pointCloud[i].z >= (double)maxSlot*2/100)&&(pointCloud[i].z < ((double)maxSlot+1)*2/100))
-		if (pointCloud[i].z >= tabletop)
+		if ((pointCloud[i].z >= tabletop) && (pointCloud[i].x > tableMinX) && (pointCloud[i].x < tableMaxX) && (pointCloud[i].y < tableMaxY) &&(pointCloud[i].y > tableMinY))
 		{
 			ch0_.values.push_back(nt_msg.channels[0].values[i]);
 			ch1_.values.push_back(nt_msg.channels[1].values[i]);
@@ -101,35 +125,99 @@ vector<visualization_msgs::Marker>& marker_msgs
 	pointsAboveTable.channels.push_back(ch1_);
 	pointsAboveTable.channels.push_back(ch2_);
 	
+	//filtered_msgs.push_back(pointsAboveTable);
 	
 	////////////////////////////////////////////////////////////
-	// -------------------SECOND STEP--------------------------
-	// find cylinders after table removed
+	// -------------------SECOND STEP-------------------------//
+	// find cylinders after table removed                     //
 	////////////////////////////////////////////////////////////
 
 	vector<long unsigned int> clusterId;
+	vector<long unsigned int> preclusterId;
 	
-//	int k = 6000;
-//	find_cluster(filtered_msg->points, k, clusterId);
+	
+	
+	int k = 5;
+	
+	/*
+	find_cluster(pointsAboveTable.points, k, clusterId);
+
+
+	std_msgs::ColorRGBA tcolor_ = colorArray[0];
+	for (j = 0; j < (int)clusterId.size(); j++)
+	{
+		pointsAboveTable.channels[0].values[clusterId[j]]=tcolor_.r;
+		pointsAboveTable.channels[1].values[clusterId[j]]=tcolor_.g;
+		pointsAboveTable.channels[2].values[clusterId[j]]=tcolor_.b;
+	}
+
+
+	filtered_msgs.push_back(pointsAboveTable);
+	return;
+*/
+
+
 
 	vector<geometry_msgs::Point32> tempCloud;
 	sensor_msgs::PointCloud cylCloud;
 	vector<cylinder> cylinders;
 	cylinder cylinder_;
+	sensor_msgs::PointCloud displayCloud;
 	
 	for (int cylId = 0; cylId < MAX_CYL_NUM; cylId++)
 	{
-		// find first bottle
-		find_cylinder(pointsAboveTable.points, cylinder_, clusterId);
+		find_cluster(pointsAboveTable.points, k, preclusterId);
 		
-		cylinders.push_back(cylinder_);
+		
+		
+		if (cylId == 1) 
+		{
+			std_msgs::ColorRGBA tcolor_ = colorArray[0];
+			ch0_.name = 'r';
+			ch1_.name = 'g';
+			ch2_.name = 'b';
+			
+			ch0_.values.clear();
+			ch1_.values.clear();
+			ch2_.values.clear();
+	
+			//for (j = 0; j < (int)preclusterId.size(); j++)
+			for (j = 0; j < (int)pointsAboveTable.points.size(); j++)
+			{
+				//displayCloud.points.push_back(pointsAboveTable.points[preclusterId[j]]);
+				displayCloud.points.push_back(pointsAboveTable.points[j]);
+				ch0_.values.push_back(tcolor_.r);
+				ch1_.values.push_back(tcolor_.g);
+				ch2_.values.push_back(tcolor_.b);
+			}
+			displayCloud.channels.push_back(ch0_);
+			displayCloud.channels.push_back(ch1_);
+			displayCloud.channels.push_back(ch2_);
+			filtered_msgs.push_back(displayCloud);
+		}
+		
+		
+		
+		// if cluster is too small, ignore and stop searching
+		if (preclusterId.size() < 1000) 
+		{
+			cout<<"case 1 no cluster: "<<preclusterId.size()<<endl;
+			cylNum = cylId;
+			break;
+		}
+		
+		// find a bottle
+		find_cylinder(pointsAboveTable.points, preclusterId, cylinder_, clusterId);
 		
 		// if cylinder is too small, ignore and stop searching
 		if (clusterId.size() < CYL_POINT_THRESH) 
 		{
+			cout<<"case 2 no cylinder: "<<clusterId.size()<<endl;
 			cylNum = cylId;
 			break;
 		}
+		
+		cylinders.push_back(cylinder_);
 		
 		// construct clouds
 		int filterPointNum = pointsAboveTable.points.size();
@@ -151,7 +239,7 @@ vector<visualization_msgs::Marker>& marker_msgs
 			if (assigned[i] == 0) tempCloud.push_back(pointsAboveTable.points[i]);
 		}
 		
-		cout<<cylId<<" cylinder: "<<clusterId.size()<<endl;
+		cout<<"cylinder "<<cylId<<": "<<clusterId.size()<<endl;
 		
 		pointsAboveTable.points.clear();
 		pointsAboveTable.points = tempCloud;
@@ -181,7 +269,7 @@ vector<visualization_msgs::Marker>& marker_msgs
 		for (j = 0; j < cylNum; j++)
 		{
 			cylinder_ = cylinders[j];
-			if ((p.z > cylinder_.center.z + cylinder_.height / 2) && (distance(cylinder_.center, p) < cylinder_.radius))
+			if ((p.z > cylinder_.center.z + cylinder_.height / 2) && (distance(cylinder_.center, p) < cylinder_.radius*0.6))
 			{
 				caps[j].points.push_back(p);	
 			}
@@ -208,7 +296,7 @@ vector<visualization_msgs::Marker>& marker_msgs
 		double height_ = topZ - tabletop;
 		
 		if (height_ < 0.15) cylinders[i].classId = 0;
-		else if (height_ < 0.21) cylinders[i].classId = 1;
+		else if (height_ < 0.20) cylinders[i].classId = 1;
 		else cylinders[i].classId = 2;
 	}
 	
@@ -280,12 +368,13 @@ vector<visualization_msgs::Marker>& marker_msgs
 		}
 	}
 	
-	filtered_msgs.push_back(cylCloud);
+//	filtered_msgs.push_back(cylCloud);
 }
 
 
 void TableDetector::find_cylinder(
 vector<geometry_msgs::Point32>& pointCloud,
+vector<long unsigned int>& preclusterId,
 cylinder& cylinder_,
 vector<long unsigned int>& clusterId)
 {
@@ -301,22 +390,23 @@ vector<long unsigned int>& clusterId)
 	double error = 0;
 	double margin = 0.005;
 	int size = pointCloud.size();
+	int clusterSize = preclusterId.size();
 	geometry_msgs::Point32 center;
 	double r;
 	
 	for (i = 0; i < iter; i++)
 	{
 		// pick three random points
-		p1 = int(__drand48__() * (size - 1));
-		p2 = int(__drand48__() * (size - 1));
-		p3 = int(__drand48__() * (size - 1));
+		p1 = int(__drand48__() * (clusterSize - 1));
+		p2 = int(__drand48__() * (clusterSize - 1));
+		p3 = int(__drand48__() * (clusterSize - 1));
 		if ((p1 == p2) || (p1 == p3) || (p2 == p3)) {i--; continue;}
 		
 		// find the circle
-		find_circle(pointCloud[p1], pointCloud[p2], pointCloud[p3], center_t, r_t);
+		find_circle(pointCloud[preclusterId[p1]], pointCloud[preclusterId[p2]], pointCloud[preclusterId[p3]], center_t, r_t);
 		
 		// evaluate this circle
-		if ((r_t > 0.07)||(r_t < 0.03)) {i--; continue;}
+		if ((r_t > 0.04)||(r_t < 0.02)) {i--; continue;}
 		consensus_t = 0;
 		for (j = 0; j < size; j++)
 		{
@@ -332,9 +422,10 @@ vector<long unsigned int>& clusterId)
 			r = r_t;
 			consensus = consensus_t;
 		}
+		if (consensus > int(preclusterId.size()*0.6)) {cout<<"**consensus: "<<consensus<<endl; break;}
 	}
 	
-	// fit the points to a cylinder, twice
+	// fit the points to a cylinder, multiple times
 	for (int fitTime = 0; fitTime < 2; fitTime++)
 	{
 		vector<geometry_msgs::Point32> cylPoints;
@@ -342,7 +433,8 @@ vector<long unsigned int>& clusterId)
 		for (j = 0; j < size; j++)
 		{
 			error = distance(pointCloud[j], center) - r;
-			if ((error < margin*2) && (error > -margin*2))
+			double amp = 1.5 + (double)fitTime * 0.5;
+			if ((error < margin*amp) && (error > -margin*amp))
 			{
 				cylPoints.push_back(pointCloud[j]);
 			}
@@ -425,6 +517,113 @@ double& r)
 	center.x = A;
 	center.y = B;
 	r = R;
+}
+
+void TableDetector::find_cluster(
+vector<geometry_msgs::Point32>& pointCloud, 
+int k, 
+vector<long unsigned int>& clusterId)
+{
+	int i,j;
+	vector<Point> points;
+	Point p_;
+	vector<double> distance;
+	int size = pointCloud.size();
+	int startPoint = 0;
+	int* pointStatus = new int[size]; // 0 - unreached, 1 - open, 2 - explored
+	bool* pointAssigned = new bool[size];
+	
+	double disThresh = 0.0004;
+	vector<long unsigned int> neighborPoints;
+	int clusterMinSize = 2000;
+	vector<unsigned long> openList;
+	int curId = 0;
+	int iter = 0;
+	int maxIter = 0.01*size;
+	vector<long unsigned int> tempCluster;
+	int assignedNum = 0;
+	
+	if (size < clusterMinSize)
+	{
+		clusterId.clear();
+		return;
+	}
+	
+	// initialize the points
+	for (i = 0; i < size; i++)
+	{
+		pointStatus[i] = 0;
+		pointAssigned[i] = false;
+		p_[0] = pointCloud[i].x;
+		p_[1] = pointCloud[i].y;
+		p_[2] = pointCloud[i].z;
+		points.push_back(p_);
+	}
+	
+	// initialize the NN algorithm
+	sfcnn<Point, 3, double> NN(&points[0], size);
+
+	clusterId.clear();
+	do
+	{
+		iter++;
+		for (j = 0; j < size; j++) pointStatus[j] = 0;
+		openList.clear();
+		tempCluster.clear();
+		
+		for (i = 0; i < size; i++) 
+		{
+			if (pointAssigned[i] == false) break;
+		}
+		
+		// set starting point
+	/*	do{
+			startPoint = int(__drand48__() * (size - 1));
+		} while (pointAssigned[startPoint] == true);*/
+		startPoint = i;
+		openList.push_back(startPoint);
+		pointAssigned[startPoint] = true;
+		assignedNum++;
+		
+		do
+		{
+			// add explored point into cluster
+			curId = openList.back();
+			openList.pop_back();
+			pointStatus[curId] = 2;
+			tempCluster.push_back(curId);
+			
+			// find neighbor points
+			NN.ksearch(points[curId], k, neighborPoints, distance);
+
+		//	if (distance[0] > disThresh) continue;
+			
+			// add new points into open list
+			for (j = 0; j < k; j++)
+			{
+				curId = neighborPoints[j];
+				if ((pointStatus[curId] == 0)&&(distance[j] < disThresh))
+				{
+					openList.push_back(curId);
+					pointStatus[curId] = 1;
+					if (pointAssigned[curId] == false) assignedNum++;
+					pointAssigned[curId] = true;
+				}
+			}
+			
+		} while (!openList.empty());
+		
+		if (tempCluster.size() > max(clusterMinSize, (int)clusterId.size())) clusterId = tempCluster;
+	} while (assignedNum < size);//(clusterId.size() < clusterMinSize));// && (iter <= maxIter));
+	
+	if (iter >= maxIter)
+	{
+		cout<<"no more cluster, iter: "<<iter<<" size: "<<clusterId.size()<<endl;
+		clusterId.clear();
+	}
+	
+	cout<<"cluster size: "<<clusterId.size()<<endl;
+	delete pointStatus;
 }
 
 
