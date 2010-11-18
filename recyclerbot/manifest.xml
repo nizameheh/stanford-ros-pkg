@@ -4,19 +4,27 @@
      recyclerbot
 
   </description>
-  <author>Jiahui Shi jiahui@stanford.edu, Morgan Quigley mquigley@cs.stanford.edu and Alan Asbeck aasbeck@stanford.edu</author>
+  <author>Jiahui Shi jiahui@stanford.edu</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/recyclerbot</url>
   <depend package="roscpp"/>
   <depend package="rospy"/>
   <depend package="rosbag"/>
+  <depend package="tf"/>
+  <depend package="teleop_controllers"/>
+  
   <depend package="sensor_msgs"/>
   <depend package="geometry_msgs"/>
   <depend package="visualization_msgs"/>
-  <depend package="opencv2"/>
-  <depend package="tf"/>
-  <!--depend package="camera1394"/-->
+  <depend package="kinematics_msgs"/>
+  <depend package="move_arm_msgs"/>
+  <depend package="actionlib"/>
+  <depend package="actionlib_msgs"/>
+  <depend package="pr2_msgs" />
+  <depend package="pr2_controllers_msgs"/>
+  <depend package="pr2_mechanism_msgs"/>
+  <depend package="simple_Jtranspose_controller"/>
 
 </package>
 

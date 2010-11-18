@@ -9,20 +9,27 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
+rosbuild_find_ros_package(actionlib)
+include(${actionlib_PACKAGE_PATH}/cmake/actionbuild.cmake)
+genaction()
+
 rosbuild_init(recyclerbot)
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(EXECUobject_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+rosbuild_genmsg()
+
 include_directories(include)
-rosbuild_add_library(table_detector src/table_detector.cpp)
-#rosbuild_add_library(STANN src/STANN.cpp)
+rosbuild_add_library(object_detector src/object_detector.cpp)
 
-rosbuild_add_executable(table_detector_node src/table_detector_node.cpp)
-target_link_libraries(table_detector_node table_detector)
+rosbuild_add_executable(object_detector_node src/object_detector_node.cpp)
+target_link_libraries(object_detector_node object_detector)
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
+rosbuild_add_executable(recyclerbot_master src/recyclerbot_master.cpp)
+rosbuild_add_executable(grasp_server src/grasp_server.cpp)
+
+
 #uncomment if you have defined services
 #rosbuild_gensrv()
 

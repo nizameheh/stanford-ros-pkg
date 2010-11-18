@@ -1,5 +1,5 @@
-#ifndef TABLEDETECTOR_H
-#define TABLEDETECTOR_H
+#ifndef OBJECTDETECTOR_H
+#define OBJECTDETECTOR_H
 
 #include "ros/ros.h"
 #include "sensor_msgs/PointCloud.h"
@@ -42,13 +42,13 @@ struct cylinder
 	int classId; // 0 - can, 1 - glass bottle, 2 - plastic bottle
 };
 
-class TableDetector
+class ObjectDetector
 {
 public:
 	std_msgs::ColorRGBA colorArray[COLORNUM];
 	
-  TableDetector();
-  ~TableDetector(){};
+  ObjectDetector();
+  ~ObjectDetector(){};
 	void process_cloud(sensor_msgs::PointCloud& nt_msg,
 										 sensor_msgs::PointCloud& ws_msg,
 										 int& cylNum,
