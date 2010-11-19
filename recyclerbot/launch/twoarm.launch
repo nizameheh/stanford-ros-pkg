@@ -100,14 +100,14 @@
     type: PoseStamped
     object_pose:
       position:
-        x: 0.637490928173
-        y: 0.123678714037
+        x: 0.685976207661
+        y: 0.120741815416
         z: 0.75995194912
       orientation:
         x: 0
-        y: 0.6
+        y: 0
         z: 0
-        w: 0.8
+        w: 1.0
     gripper_orientation:
       x: -0.00403457514937
       y: -0.780539478508
