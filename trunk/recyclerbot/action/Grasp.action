@@ -2,7 +2,7 @@
 geometry_msgs/PoseStamped targetPose
 ---
 # result definition
-geometry_msgs/Pose endPose
+geometry_msgs/PoseStamped endPose
 ---
 # feedback definition
-geometry_msgs/Pose currentPose
+geometry_msgs/PoseStamped currentPose

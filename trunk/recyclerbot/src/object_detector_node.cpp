@@ -151,24 +151,25 @@ int main(int argc, char **argv)
   ros::Rate rate(0.5);
   ros::Publisher cylinderArray_pub = n.advertise<recyclerbot::CylinderArray>("/cylinder_array", 10);
 
+  recyclerbot::Cylinder tempCylinder;
+  n.getParam("object_pose/position/x", tempCylinder.pose.position.x);
+  n.getParam("object_pose/position/y", tempCylinder.pose.position.y);
+  n.getParam("object_pose/position/z", tempCylinder.pose.position.z);
+  n.getParam("object_pose/orientation/x", tempCylinder.pose.orientation.x);
+  n.getParam("object_pose/orientation/y", tempCylinder.pose.orientation.y);
+  n.getParam("object_pose/orientation/z", tempCylinder.pose.orientation.z);
+  n.getParam("object_pose/orientation/w", tempCylinder.pose.orientation.w);
+  tempCylinder.radius = 0.032914805061;
+  tempCylinder.height = 0.143234491348;
+    
   while (n.ok()) 
   {
       // publish cylinders
     recyclerbot::CylinderArray cylinderArray;
     cylinderArray.header.frame_id = "/base_footprint";
     cylinderArray.header.stamp = ros::Time::now();
-    
-    recyclerbot::Cylinder tempCylinder;
-    tempCylinder.pose.position.x = 0.638162016869;
-    tempCylinder.pose.position.y = 0.123678714037;
-    tempCylinder.pose.position.z = 0.75995194912;
-    tempCylinder.pose.orientation.x = 0;
-    tempCylinder.pose.orientation.y = 0;
-    tempCylinder.pose.orientation.z = 0.6;
-    tempCylinder.pose.orientation.w = 0.8;
-    tempCylinder.radius = 0.032914805061;
-    tempCylinder.height = 0.143234491348;
     cylinderArray.cylinders.push_back(tempCylinder);
+    
     cylinderArray_pub.publish(cylinderArray);
     
     rate.sleep();
