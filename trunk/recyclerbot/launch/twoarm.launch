@@ -91,6 +91,7 @@
 
   <param name="success_threshold" value="0.02"/>
   <param name="max_lead" value="0.08"/>
+  <param name="gripper_max_effort" value="25"/>
   <node name="grasp_server" pkg="recyclerbot" type="grasp_server" output="screen">
     <remap from="command_pose" to="/r_cart/command_pose"/>
     <remap from="current_pose" to="/r_cart/state/x"/>
