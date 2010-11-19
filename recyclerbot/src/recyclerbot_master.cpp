@@ -25,6 +25,7 @@ class RecyclerbotMaster
   GripperClient* gripperClient;
   recyclerbot::GraspGoal goal;
   geometry_msgs::PoseStamped currentPose;
+  pr2_controllers_msgs::Pr2GripperCommandGoal gripperGoal;
   
   State state;
   
@@ -86,9 +87,8 @@ void RecyclerbotMaster::move_arm_to_bin(geometry_msgs::PoseStamped& pose)
 
 void RecyclerbotMaster::move_gripper(double position)
 {
-  pr2_controllers_msgs::Pr2GripperCommandGoal gripperGoal;
   gripperGoal.command.position = position;
-  gripperGoal.command.max_effort = 40;
+  n.getParam("gripper_max_effort", gripperGoal.command.max_effort);
   
   ROS_INFO("Gripper action server sending goal.");
   gripperClient->sendGoal(gripperGoal);
@@ -131,6 +131,8 @@ void RecyclerbotMaster::object_pose_callback(const recyclerbot::CylinderArray& m
   {
     state = MOVE_CLOSE;
 
+    open_gripper();
+
     geometry_msgs::PoseStamped targetPose;
     targetPose.header.frame_id = msg.header.frame_id;
     targetPose.header.stamp = ros::Time::now();  
@@ -143,8 +145,12 @@ void RecyclerbotMaster::object_pose_callback(const recyclerbot::CylinderArray& m
     move_arm(targetPose);
     ros::Duration(5).sleep();
     close_gripper();
-    ros::Duration(2).sleep();
+    ros::Duration(1).sleep();
     move_arm_to_bin(targetPose);
+    ros::Duration(1).sleep();
+    open_gripper();
+    ros::Duration(5).sleep();
+    state = DETECTION;
   }
 }
 
