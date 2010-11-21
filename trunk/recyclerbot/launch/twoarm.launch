@@ -37,8 +37,8 @@
       r_wrist_flex_joint: 5.568
       r_wrist_roll_joint: 5.568
 
-    vel_saturation_trans: 2.0
-    vel_saturation_rot: 4.0
+    vel_saturation_trans: 1.0
+    vel_saturation_rot: 2.0
   </rosparam>
   
   <rosparam ns="l_cart">
@@ -71,8 +71,8 @@
       l_forearm_roll_joint: 8.376
       l_wrist_flex_joint: 5.568
       l_wrist_roll_joint: 5.568
-    vel_saturation_trans: 2.0
-    vel_saturation_rot: 4.0
+    vel_saturation_trans: 1.0
+    vel_saturation_rot: 2.0
   </rosparam>
   
 
@@ -91,7 +91,7 @@
 
   <param name="success_threshold" value="0.02"/>
   <param name="max_lead" value="0.08"/>
-  <param name="gripper_max_effort" value="25"/>
+  <param name="gripper_max_effort" value="18"/>
   <node name="grasp_server" pkg="recyclerbot" type="grasp_server" output="screen">
     <remap from="command_pose" to="/r_cart/command_pose"/>
     <remap from="current_pose" to="/r_cart/state/x"/>
@@ -101,14 +101,14 @@
     type: PoseStamped
     object_pose:
       position:
-        x: 0.685976207661
-        y: 0.120741815416
-        z: 0.75995194912
+        x: 0.84452944994
+        y: 0.0548339411616
+        z: 1.0111913681
       orientation:
         x: 0
-        y: 0
+        y: 0.3
         z: 0
-        w: 1.0
+        w: 0.953939201
     gripper_orientation:
       x: -0.00403457514937
       y: -0.780539478508

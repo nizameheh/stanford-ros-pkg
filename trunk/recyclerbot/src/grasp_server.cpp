@@ -73,6 +73,7 @@ public:
   
   void execute_cb(const recyclerbot::GraspGoalConstPtr &goal)
   {
+  	success_threshold = goal->precision;
     ros::Rate rate(10.0);
     while (curPoseFrameId == "") rate.sleep();
     
@@ -106,7 +107,7 @@ public:
       geometry_msgs::PoseStamped wayPoint;
       wayPoint = targetPose;
       wayPoint.header.stamp = ros::Time::now();
-      /*
+      
       if (positionError > max_lead)
       {
 	double k = max_lead / positionError;
@@ -114,7 +115,7 @@ public:
 	wayPoint.pose.position.y = targetPose.pose.position.y * k + currentPose.pose.position.y * (1 - k);
 	wayPoint.pose.position.z = targetPose.pose.position.z * k + currentPose.pose.position.z * (1 - k);
       
-      }*/
+      }
       commandPose_pub.publish(wayPoint);
       feedback.currentPose = currentPose;
       rate.sleep();    
