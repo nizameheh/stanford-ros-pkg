@@ -18,6 +18,7 @@ class ObjectDetectorNode
   ros::Subscriber ntPoint_sub; // nt = narrow textured point cloud
   ros::Subscriber wsPoint_sub; // ws = wide stereo point cloud
   ros::Publisher filteredPoints_pub; // publish processed points
+  ros::Publisher objectPoints_pub; // publish processed points
   ros::Publisher cylMarker_pub; // publish cylinders
   ros::Publisher cylinderArray_pub;
   tf::TransformListener* tran; // narrow textured to Footprint
@@ -31,6 +32,7 @@ class ObjectDetectorNode
   ObjectDetectorNode(ros::NodeHandle &_n) : n(_n)
   {
     filteredPoints_pub = n.advertise<sensor_msgs::PointCloud>("/filtered_points", 10);
+    objectPoints_pub = n.advertise<sensor_msgs::PointCloud>("/object_points", 10);
     cylMarker_pub = n.advertise<visualization_msgs::Marker>("/bottle_marker", 10);
     cylinderArray_pub = n.advertise<recyclerbot::CylinderArray>("/cylinder_array", 10);
     ntPoint_sub = n.subscribe<sensor_msgs::PointCloud>("/narrow_stereo_textured/points", 1, &ObjectDetectorNode::nt_cb, this);
@@ -103,19 +105,30 @@ void ObjectDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // 
   objectDetector.process_cloud(ntTrPoints, wsTrPoints, cylNum, filtered_msgs, marker_msgs);
   
   
-  
-  // publish cylinders
-  recyclerbot::CylinderArray cylinderArray;
-  cylinderArray.header.frame_id = "/base_footprint";
-  cylinderArray.header.stamp = ros::Time::now();
-  
-  recyclerbot::Cylinder tempCylinder;
-  tempCylinder.pose = marker_msgs[0].pose;
-  tempCylinder.radius = marker_msgs[0].scale.x / 2;
-  tempCylinder.height = marker_msgs[0].scale.z;
-  cylinderArray.cylinders.push_back(tempCylinder);
-  cylinderArray_pub.publish(cylinderArray);
-  
+  if (marker_msgs.empty() == false)
+  {
+		// publish cylinders
+		recyclerbot::CylinderArray cylinderArray;
+		cylinderArray.header.frame_id = "/base_footprint";
+		cylinderArray.header.stamp = msg->header.stamp;
+		
+		recyclerbot::Cylinder tempCylinder;
+		tempCylinder.pose = marker_msgs[0].pose;
+		
+		n.getParam("object_pose/orientation/x", tempCylinder.pose.orientation.x);
+		n.getParam("object_pose/orientation/y", tempCylinder.pose.orientation.y);
+		n.getParam("object_pose/orientation/z", tempCylinder.pose.orientation.z);
+		n.getParam("object_pose/orientation/w", tempCylinder.pose.orientation.w);
+		
+		tempCylinder.radius = marker_msgs[0].scale.x / 2;
+		tempCylinder.height = marker_msgs[0].scale.z;
+		
+		if (marker_msgs[0].color.r == 1) tempCylinder.category = 1;
+		else tempCylinder.category = 2;
+		
+		cylinderArray.cylinders.push_back(tempCylinder);
+		cylinderArray_pub.publish(cylinderArray);
+  }
   
   
   
@@ -126,14 +139,24 @@ void ObjectDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // 
   // publish markers and point cloud messages
   if (n.ok()) 
   {
-    for (i = 0; i < int(filtered_msgs.size()); i++) 
+//    for (i = 0; i < int(filtered_msgs.size()); i++)
+		if (filtered_msgs.size() > 0)
     {
       // copy header info into new message
-      filtered_msgs[i].header.frame_id = "/base_footprint";
-      filtered_msgs[i].header.stamp = ros::Time::now();
-      filtered_msgs[i].header.seq = msg->header.seq;
-      filteredPoints_pub.publish(filtered_msgs[i]);
+      filtered_msgs[0].header.frame_id = "/base_footprint";
+      filtered_msgs[0].header.stamp = ros::Time::now();
+      filtered_msgs[0].header.seq = msg->header.seq;
+      objectPoints_pub.publish(filtered_msgs[0]);
     }
+		if (filtered_msgs.size() > 1)
+    {
+      // copy header info into new message
+      filtered_msgs[1].header.frame_id = "/base_footprint";
+      filtered_msgs[1].header.stamp = ros::Time::now();
+      filtered_msgs[1].header.seq = msg->header.seq;
+      filteredPoints_pub.publish(filtered_msgs[1]);
+    }
+    
     for (i = 0; i < int(marker_msgs.size()); i++) cylMarker_pub.publish(marker_msgs[i]);
   }
 
@@ -145,35 +168,41 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
   __srand48__(static_cast<unsigned int>(time(0)));
   
-  //ObjectDetectorNode objectDetectorNode(n);
   
-  // FOR TESTING ONLY!!!!
-  ros::Rate rate(0.5);
-  ros::Publisher cylinderArray_pub = n.advertise<recyclerbot::CylinderArray>("/cylinder_array", 10);
-
-  recyclerbot::Cylinder tempCylinder;
-  n.getParam("object_pose/position/x", tempCylinder.pose.position.x);
-  n.getParam("object_pose/position/y", tempCylinder.pose.position.y);
-  n.getParam("object_pose/position/z", tempCylinder.pose.position.z);
-  n.getParam("object_pose/orientation/x", tempCylinder.pose.orientation.x);
-  n.getParam("object_pose/orientation/y", tempCylinder.pose.orientation.y);
-  n.getParam("object_pose/orientation/z", tempCylinder.pose.orientation.z);
-  n.getParam("object_pose/orientation/w", tempCylinder.pose.orientation.w);
-  tempCylinder.radius = 0.032914805061;
-  tempCylinder.height = 0.143234491348;
-    
-  while (n.ok()) 
+  
+  bool testing = false;
+  if (testing)
   {
-      // publish cylinders
-    recyclerbot::CylinderArray cylinderArray;
-    cylinderArray.header.frame_id = "/base_footprint";
-    cylinderArray.header.stamp = ros::Time::now();
-    cylinderArray.cylinders.push_back(tempCylinder);
-    
-    cylinderArray_pub.publish(cylinderArray);
-    
-    rate.sleep();
+		// FOR TESTING ONLY!!!!
+		ros::Rate rate(0.5);
+		ros::Publisher cylinderArray_pub = n.advertise<recyclerbot::CylinderArray>("/cylinder_array", 10);
+
+		recyclerbot::Cylinder tempCylinder;
+		n.getParam("object_pose/position/x", tempCylinder.pose.position.x);
+		n.getParam("object_pose/position/y", tempCylinder.pose.position.y);
+		n.getParam("object_pose/position/z", tempCylinder.pose.position.z);
+		n.getParam("object_pose/orientation/x", tempCylinder.pose.orientation.x);
+		n.getParam("object_pose/orientation/y", tempCylinder.pose.orientation.y);
+		n.getParam("object_pose/orientation/z", tempCylinder.pose.orientation.z);
+		n.getParam("object_pose/orientation/w", tempCylinder.pose.orientation.w);
+		tempCylinder.radius = 0.032914805061;
+		tempCylinder.height = 0.143234491348;
+		  
+		while (n.ok()) 
+		{
+		    // publish cylinders
+		  recyclerbot::CylinderArray cylinderArray;
+		  cylinderArray.header.frame_id = "/base_footprint";
+		  cylinderArray.header.stamp = ros::Time::now();
+		  cylinderArray.cylinders.push_back(tempCylinder);
+		  
+		  cylinderArray_pub.publish(cylinderArray);
+		  
+		  rate.sleep();
+		}
   }
+  
+  ObjectDetectorNode objectDetectorNode(n);
   
   ros::spin();
   return 0;
