@@ -29,11 +29,17 @@ rosbuild_genmsg()
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_library(wifi_sniffer wifi_sniffer.cpp)
-target_link_libraries(wifi_sniffer iw)
+rosbuild_add_library(wifi_sniffer src/wifi_sniffer.cpp)
+target_link_libraries(wifi_sniffer iw boost_serialization)
 
-rosbuild_add_executable(standalone standalone.cpp)
+rosbuild_add_executable(standalone src/standalone.cpp)
 target_link_libraries(standalone wifi_sniffer)
 
-rosbuild_add_executable(wifi_sniffer_node wifi_sniffer_node.cpp)
+rosbuild_add_executable(wifi_sniffer_node src/wifi_sniffer_node.cpp)
 target_link_libraries(wifi_sniffer_node wifi_sniffer)
+
+rosbuild_add_executable(mapper src/mapper.cpp)
+target_link_libraries(mapper wifi_sniffer)
+
+rosbuild_add_executable(runner src/runner.cpp src/posePDF.cpp src/pose.cpp src/ConfigFileLoader.cpp)
+target_link_libraries(runner wifi_sniffer)

@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="map_server" name="map_server" type="map_server" args="$(find wifi_sniffer)/map/map1.pgm .05"/> 
+    <include file="$(find erratic_nav)/amcl.launch"/>
+    <node pkg="rviz" name="rviz" type="rviz"/>
+
+</launch>
