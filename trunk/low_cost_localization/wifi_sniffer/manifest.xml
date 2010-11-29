@@ -7,6 +7,12 @@
   <license>GPL, as some of this package is derived from the Linux wireless tools</license>
   <rosdep name="wireless-tools"/>
   <depend package="roscpp"/>
+  <depend package="tf"/>
+  <depend package="visualization_msgs"/>
+  <depend package="std_msgs"/>
+  <depend package="laser_geometry"/>
+  <depend package="nav_msgs"/>
+  <depend package="move_base_msgs"/>
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-L${prefix}/lib -lwifi_sniffer -Wl,-rpath,${prefix}/lib"/>
   </export>
