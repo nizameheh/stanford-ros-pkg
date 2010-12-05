@@ -16,6 +16,7 @@ class ObjectDetectorNode
   private:
   ros::NodeHandle n;
   ros::Subscriber ntPoint_sub; // nt = narrow textured point cloud
+  ros::Subscriber nsPoint_sub; // ns = narrow stereo point cloud
   ros::Subscriber wsPoint_sub; // ws = wide stereo point cloud
   ros::Publisher filteredPoints_pub; // publish processed points
   ros::Publisher objectPoints_pub; // publish processed points
@@ -23,7 +24,8 @@ class ObjectDetectorNode
   ros::Publisher cylinderArray_pub;
   tf::TransformListener* tran; // narrow textured to Footprint
   ros::Time preStamp;
-  sensor_msgs::PointCloud wsPoints;
+  sensor_msgs::PointCloud wsPoints; // point cloud from narrow stereo
+  sensor_msgs::PointCloud nsPoints; // point cloud from wide stereo
   ObjectDetector objectDetector;
   
   std_msgs::ColorRGBA colorArray[COLORNUM];
@@ -36,6 +38,7 @@ class ObjectDetectorNode
     cylMarker_pub = n.advertise<visualization_msgs::Marker>("/bottle_marker", 10);
     cylinderArray_pub = n.advertise<recyclerbot::CylinderArray>("/cylinder_array", 10);
     ntPoint_sub = n.subscribe<sensor_msgs::PointCloud>("/narrow_stereo_textured/points", 1, &ObjectDetectorNode::nt_cb, this);
+    nsPoint_sub = n.subscribe<sensor_msgs::PointCloud>("/narrow_stereo/points", 1, &ObjectDetectorNode::ns_cb, this);
     wsPoint_sub = n.subscribe<sensor_msgs::PointCloud>("/wide_stereo/points", 1, &ObjectDetectorNode::ws_cb, this);
     
     tran = new tf::TransformListener(n, ros::Duration(2.0));
@@ -59,6 +62,7 @@ class ObjectDetectorNode
   }
   
   void nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg); // narrow textured call back
+  void ns_cb(const sensor_msgs::PointCloud::ConstPtr &msg); // narrow stereo call back
   void ws_cb(const sensor_msgs::PointCloud::ConstPtr &msg); // wide stereo call back
 };
 
@@ -68,15 +72,21 @@ void ObjectDetectorNode::ws_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // 
   wsPoints = *msg;
 }
 
+void ObjectDetectorNode::ns_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // wide stereo call back
+{
+  nsPoints = *msg;
+}
 
 void ObjectDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // narrow textured call back
 {
-  if (wsPoints.points.empty()) return;
+  if (wsPoints.points.empty()||nsPoints.points.empty()) return;
   
   int cylNum = 0;
   // tranform point cloud into /base_footprint frame
   sensor_msgs::PointCloud ntTrPoints; // narrow textured transformed points
-  sensor_msgs::PointCloud wsTrPoints;
+  sensor_msgs::PointCloud wsTrPoints; // wide stereo transformed points
+  sensor_msgs::PointCloud nsTrPoints; // narrow stereo transformed points
+  
   // deal with rosbag flushing
   if (preStamp >= msg->header.stamp)
   {
@@ -90,6 +100,7 @@ void ObjectDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // 
   {
     tran->transformPointCloud("/base_footprint", *msg, ntTrPoints);
     tran->transformPointCloud("/base_footprint", wsPoints, wsTrPoints);
+    tran->transformPointCloud("/base_footprint", nsPoints, nsTrPoints);
   }
   catch (tf::TransformException& ex) 
   {
@@ -123,7 +134,8 @@ void ObjectDetectorNode::nt_cb(const sensor_msgs::PointCloud::ConstPtr &msg) // 
 		tempCylinder.radius = marker_msgs[0].scale.x / 2;
 		tempCylinder.height = marker_msgs[0].scale.z;
 		
-		if (marker_msgs[0].color.r == 1) tempCylinder.category = 1;
+		if (marker_msgs[0].color.r == 1) tempCylinder.category = 0;
+		else if (marker_msgs[0].color.g == 1) tempCylinder.category = 1;
 		else tempCylinder.category = 2;
 		
 		cylinderArray.cylinders.push_back(tempCylinder);

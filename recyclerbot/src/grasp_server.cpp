@@ -30,6 +30,7 @@ private:
   
   ros::Publisher targetPose_pub;
   ros::Publisher commandPose_pub;
+  //ros::Publisher velocitySaturation_pub;
   ros::Subscriber currentPose_sub;
   tf::TransformListener* trans;
   
@@ -50,6 +51,7 @@ public:
     
     targetPose_pub = n.advertise<geometry_msgs::PoseStamped>("target_pose", 3);
     commandPose_pub = n.advertise<geometry_msgs::PoseStamped>("command_pose", 3);
+    //velocitySaturation_pub = n.advertise<geometry_msgs::PoseStamped>("velocity_saturation", 3);
     
     currentPose_sub = n.subscribe("current_pose", 1, &GraspServer::cur_pose_cb, this);
     targetSet = false;

@@ -49,11 +49,21 @@ public:
 	
   ObjectDetector();
   ~ObjectDetector(){};
+  void remove_background(//vector<geometry_msgs::Point32>& pointCloud,
+  											 sensor_msgs::PointCloud& pointCloud_msg,
+												 sensor_msgs::PointCloud& pointsAboveTable,
+												 double& tabletop);
+																						
+  void remove_background_bk(vector<geometry_msgs::Point32>& pointCloud,
+																						sensor_msgs::PointCloud& pointsAboveTable,
+																						double tabletop);
+																						
 	void process_cloud(sensor_msgs::PointCloud& nt_msg,
 										 sensor_msgs::PointCloud& ws_msg,
 										 int& cylNum,
 	                   vector<sensor_msgs::PointCloud>& filtered_msgs,
 	                   vector<visualization_msgs::Marker>& marker_msg);
+	                   
 	void find_cluster(vector<geometry_msgs::Point32>& pointCloud, 
 										int k, 
 										vector<long unsigned int>& clusterId);
