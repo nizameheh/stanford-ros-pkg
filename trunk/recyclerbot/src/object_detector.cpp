@@ -1,5 +1,5 @@
 #include "recyclerbot/object_detector.h"
-#define RESOLUTION 0.01
+#define RESOLUTION 0.02
 
 using namespace std;
 
@@ -30,25 +30,199 @@ sensor_msgs/ChannelFloat32[] channels
   float32[] values
 */
  
-void ObjectDetector::process_cloud(
-sensor_msgs::PointCloud& nt_msg,
-sensor_msgs::PointCloud& ws_msg,
-int& cylNum,
-vector<sensor_msgs::PointCloud>& filtered_msgs,
-vector<visualization_msgs::Marker>& marker_msgs
+
+void ObjectDetector::remove_background(
+//vector<geometry_msgs::Point32>& pointCloud,
+sensor_msgs::PointCloud& pointCloud_msg,
+sensor_msgs::PointCloud& pointsAboveTable,
+double& tabletop
 )
 {
-  vector<geometry_msgs::Point32>& pointCloud = nt_msg.points;
-  sensor_msgs::PointCloud pointsAboveTable;
+	vector<geometry_msgs::Point32> pointCloud = pointCloud_msg.points;
+  int i = 0;
+  int j = 0; 
+  int k = 0;  
+  int pointNum = pointCloud.size();
+  
+  // discretize the space into grids
+  // grid stores number of points in it
+  int ***grid;
+  
+	// find max and min x, y, z value
+  double maxX = 0;
+  double minX = 100;
+  double maxY = -100;
+  double minY = 100;
+  double maxZ = 0;
+  double minZ = 100;
+
+  for (i = 0; i < pointNum; i++) 
+  {
+  	if ((pointCloud[i].x > 3) || (pointCloud[i].y > 3) || (pointCloud[i].z > 3)) continue;
+    if (pointCloud[i].x > maxX) maxX = pointCloud[i].x;
+    if (pointCloud[i].x < minX) minX = pointCloud[i].x;
+    if (pointCloud[i].y > maxY) maxY = pointCloud[i].y;
+    if (pointCloud[i].y < minY) minY = pointCloud[i].y;
+    if (pointCloud[i].z > maxZ) maxZ = pointCloud[i].z;
+    if (pointCloud[i].z < minZ) minZ = pointCloud[i].z;
+  }
+  
+  int gridSizeX = int((maxX - minX) / RESOLUTION) + 1;
+  int gridSizeY = int((maxY - minY) / RESOLUTION) + 1;
+  int gridSizeZ = int((maxZ - minZ) / RESOLUTION) + 1;
+  
+  // check whether grid is too large
+  int gridMaxSizeX = int(2 / RESOLUTION);
+  int gridMaxSizeY = int(2 / RESOLUTION);
+  int gridMaxSizeZ = int(1 / RESOLUTION);
+  if ((gridSizeX > gridMaxSizeX) || (gridSizeY > gridMaxSizeY) || (gridSizeZ > gridMaxSizeZ))
+  {
+  	cout<<"grid too large, x: "<<gridSizeX<<"y: "<<gridSizeY<<"z: "<<gridSizeZ<<endl;
+	  return;
+  }
+  
+  // initialize grid
+  grid = new int**[gridSizeX];
+  for (i = 0; i < gridSizeX; i++)
+  {
+  	grid[i] = new int*[gridSizeY];
+  	for (j = 0; j < gridSizeY; j++)
+  	{
+  		grid[i][j] = new int[gridSizeZ];
+  		for (k = 0; k < gridSizeZ; k++)
+  			grid[i][j][k] = 0;
+  	}
+  }
+
+	// count number of points in each grid cell
+	int x,y,z;
+  for (i = 0; i < pointNum; i++) 
+  {
+  	if ((pointCloud[i].x > 3) || (pointCloud[i].y > 3) || (pointCloud[i].z > 3)) continue;
+  	x = int((pointCloud[i].x - minX) / RESOLUTION);
+  	y = int((pointCloud[i].y - minY) / RESOLUTION);
+  	z = int((pointCloud[i].z - minZ) / RESOLUTION);
+    grid[x][y][z]++;
+  }
+  
+  int tabletopZ = 0;
+  int gridThresh = 50;
+  int temp = 0;
+  int maxGridNumZ = 0;
+  
+  // count along z axis to find the height with most filled grids
+  int* histogramZ = new int[gridSizeZ];
+  for (k = 0; k < gridSizeZ; k++)
+  {
+  	temp = 0;
+  	for (i = 0; i < gridSizeX; i++)
+  	{
+  		for (j = 0; j < gridSizeY; j++)
+  		{
+  			if (grid[i][j][k] > gridThresh) temp++;
+  		}
+  	}
+  	histogramZ[k] = temp;
+  	//cout<<"histogramZ "<<k<<": "<<temp<<endl;
+  	if (temp > 65)
+  	{
+  		tabletopZ = k;
+  		break;
+  	}
+  	if (temp > maxGridNumZ) 
+  	{
+  		maxGridNumZ = temp;
+  		tabletopZ = k;
+  	}
+  }
+  tabletop = tabletopZ * RESOLUTION + minZ;
+//  cout<<"tabletopZ: "<<tabletopZ<<", maxGridNum: "<<maxGridNumZ<<endl;
+  
+  
+  // count along x axis to find the boundary of wall with many filled grids
+  int* histogramX = new int[gridSizeX];
+  int gridMinX = -1;
+  int gridMaxX = -1;
+  for (i = 0; i < gridSizeX; i++)
+  {
+  	if (min(i, gridSizeX - i) > int(0.15 / RESOLUTION))
+  	{
+  		histogramX[i] = 0;
+  		continue;
+  	}
+  	temp = 0;
+  	for (j = 0; j < gridSizeY; j++)
+  	{
+  		for (k = tabletopZ + 1; k < gridSizeZ; k++)
+  		{
+  			if (grid[i][j][k] > gridThresh) temp++;
+  		}
+  	}
+  	histogramX[i] = temp;
+  //	cout<<"histogramX "<<i<<": "<<temp<<endl;
+  	if (temp > 45)
+  	{
+  		if (i < gridSizeX - i)
+  		{
+  			gridMinX = i;
+  		}
+  		else if (gridMaxX < 0)
+  		{
+  			gridMaxX = i;
+  		}
+  	}
+  }
+  
+  double threshMinZ = tabletop + 0.035;
+  double threshMinX = (gridMinX > 0 ? (gridMinX * RESOLUTION + 0.04 + minX) : minX);
+  double threshMaxX = (gridMaxX > 0 ? (gridMaxX * RESOLUTION - 0.04 + minX) : maxX);
+  
+  // fill pointsAboveTable struct
+  pointsAboveTable.points.clear();
+  pointsAboveTable.channels.clear();
+  sensor_msgs::ChannelFloat32 ch0_, ch1_, ch2_;
+  ch0_.name = pointCloud_msg.channels[0].name;
+  ch1_.name = pointCloud_msg.channels[1].name;
+  ch2_.name = pointCloud_msg.channels[2].name;
+  
+  for (i = 0; i < pointNum; i++)
+  {
+    if ((pointCloud[i].z > threshMinZ) &&(pointCloud[i].x > threshMinX) && (pointCloud[i].x < threshMaxX))
+    {
+      ch0_.values.push_back(pointCloud_msg.channels[0].values[i]);
+      ch1_.values.push_back(pointCloud_msg.channels[1].values[i]);
+      ch2_.values.push_back(pointCloud_msg.channels[2].values[i]);
+      pointsAboveTable.points.push_back(pointCloud[i]);			
+    }
+  }
+  pointsAboveTable.channels.push_back(ch0_);
+  pointsAboveTable.channels.push_back(ch1_);
+  pointsAboveTable.channels.push_back(ch2_);
+  
+  // delete grid
+  for (i = 0; i < gridSizeX; i++)
+  {
+  	for (j = 0; j < gridSizeY; j++)
+  		delete grid[i][j];
+  	delete grid[i];
+  }
+  delete grid;
+  delete histogramX;
+  delete histogramZ;
+}
+
+
+///////////////////////// backup code /////////////////////
+																																																																																																				
+void ObjectDetector::remove_background_bk(
+vector<geometry_msgs::Point32>& pointCloud,
+sensor_msgs::PointCloud& pointsAboveTable,
+double tabletop
+)
+{
   int i = 0;
   int j = 0;  
   int pointNum = pointCloud.size();
-  int* assigned = NULL;
-  
-	////////////////////////////////////////////////////////////
-	// -------------------FIRST STEP--------------------------
-	// remove table
-	////////////////////////////////////////////////////////////
 	
   // find the scope of table
   double tableMinX = 100;
@@ -166,12 +340,12 @@ cout<<"tableMinX: "<<tableMinX<<" tableMaxX: "<<tableMaxX<<endl;
 		  if (pointCloud[i].z < minZ) minZ = pointCloud[i].z;
 		}
   }
-  double tabletop = minZ + RESOLUTION * 2;
+  tabletop = minZ + RESOLUTION * 2;
   
   
   
   //sensor_msgs::PointCloud tempPointCloud;
-  
+ /* 
   sensor_msgs::ChannelFloat32 ch0_, ch1_, ch2_;
   ch0_.name = nt_msg.channels[0].name;
   ch1_.name = nt_msg.channels[1].name;
@@ -190,14 +364,7 @@ cout<<"tableMinX: "<<tableMinX<<" tableMaxX: "<<tableMaxX<<endl;
   pointsAboveTable.channels.push_back(ch0_);
   pointsAboveTable.channels.push_back(ch1_);
   pointsAboveTable.channels.push_back(ch2_);
-  filtered_msgs.push_back(pointsAboveTable);
-  if ((int)pointsAboveTable.points.size() < 4000) 
-  {
-  	cout<<"Too few points: "<<pointsAboveTable.points.size()<<endl;
-  	return;
-  }
   
-  //return;
   //pointsAboveTable = tempPointCloud;
 	
   
@@ -265,7 +432,41 @@ cout<<"tableMinX: "<<tableMinX<<" tableMaxX: "<<tableMaxX<<endl;
   
   filtered_msgs.push_back(pointsAboveTable);
   return;
-  */
+  */  
+}
+ 
+ 
+// find bottles and cans in point cloud
+void ObjectDetector::process_cloud(
+sensor_msgs::PointCloud& nt_msg,
+sensor_msgs::PointCloud& stereo_msg,
+int& cylNum,
+vector<sensor_msgs::PointCloud>& filtered_msgs,
+vector<visualization_msgs::Marker>& marker_msgs
+)
+{
+  vector<geometry_msgs::Point32>& pointCloud = nt_msg.points;
+  sensor_msgs::PointCloud pointsAboveTable;
+  int i = 0;
+  int j = 0;  
+  int pointNum = pointCloud.size();
+  int* assigned = NULL;
+  double tabletop;
+  
+	////////////////////////////////////////////////////////////
+	// -------------------FIRST STEP--------------------------//
+	// remove table                                           //
+	////////////////////////////////////////////////////////////
+	
+	remove_background(nt_msg, pointsAboveTable, tabletop);
+	
+  filtered_msgs.push_back(pointsAboveTable);
+    
+  if ((int)pointsAboveTable.points.size() < 3000) 
+  {
+  	cout<<"Too few points: "<<pointsAboveTable.points.size()<<endl;
+  	return;
+  }
   
   ////////////////////////////////////////////////////////////
   // -------------------SECOND STEP-------------------------//
@@ -274,8 +475,6 @@ cout<<"tableMinX: "<<tableMinX<<" tableMaxX: "<<tableMaxX<<endl;
 
   vector<long unsigned int> clusterId;
   vector<long unsigned int> preclusterId;
-  
-  
   
   int k = 5;
   
@@ -303,6 +502,7 @@ cout<<"tableMinX: "<<tableMinX<<" tableMaxX: "<<tableMaxX<<endl;
   vector<cylinder> cylinders;
   cylinder cylinder_;
   sensor_msgs::PointCloud displayCloud;
+  sensor_msgs::ChannelFloat32 ch0_, ch1_, ch2_;
   
   for (int cylId = 0; cylId < MAX_CYL_NUM; cylId++)
   {
@@ -360,6 +560,7 @@ cout<<"tableMinX: "<<tableMinX<<" tableMaxX: "<<tableMaxX<<endl;
     
     cylinders.push_back(cylinder_);
     
+    
     // construct clouds
     int filterPointNum = pointsAboveTable.points.size();
     
@@ -384,6 +585,13 @@ cout<<"tableMinX: "<<tableMinX<<" tableMaxX: "<<tableMaxX<<endl;
     
     pointsAboveTable.points.clear();
     pointsAboveTable.points = tempCloud;
+    
+    bool find_only_one_cylinder = true;
+    if (find_only_one_cylinder)
+    {
+    	cylNum = 1;
+    	break;
+    }
   }
   
   
@@ -396,23 +604,23 @@ cout<<"tableMinX: "<<tableMinX<<" tableMaxX: "<<tableMaxX<<endl;
   // find bottle cap
   ////////////////////////////////////////////////////////////
   
-  vector<geometry_msgs::Point32>& wsPointCloud = ws_msg.points;
-  int wsSize = wsPointCloud.size();
+  vector<geometry_msgs::Point32>& stereoPointCloud = stereo_msg.points;
+  int stereoSize = stereoPointCloud.size();
   geometry_msgs::Point32 p;
   
   vector<sensor_msgs::PointCloud> caps;
   sensor_msgs::PointCloud cap;
   for (i = 0; i < cylNum; i++) caps.push_back(cap);
   
-  for (i = 0; i < wsSize; i++)
+  for (i = 0; i < stereoSize; i++)
   {
-    p = wsPointCloud[i];
+    p = stereoPointCloud[i];
     for (j = 0; j < cylNum; j++)
     {
       cylinder_ = cylinders[j];
       if ((p.z > cylinder_.center.z + cylinder_.height / 2) && (distance(cylinder_.center, p) < cylinder_.radius*0.6))
       {
-	caps[j].points.push_back(p);	
+				caps[j].points.push_back(p);	
       }
     }
   }
@@ -436,8 +644,8 @@ cout<<"tableMinX: "<<tableMinX<<" tableMaxX: "<<tableMaxX<<endl;
     
     double height_ = topZ - tabletop;
     
-    if (height_ < 0.15) cylinders[i].classId = 0;
-    else if (height_ < 0.21) cylinders[i].classId = 1;
+    if (height_ < 0.16) cylinders[i].classId = 0;
+    else if (height_ < 0.22) cylinders[i].classId = 1;
     else cylinders[i].classId = 2;
   }
   
@@ -565,7 +773,7 @@ for (int trial = 0; trial < 20; trial++)
 		find_circle(pointCloud[preclusterId[p1]], pointCloud[preclusterId[p2]], pointCloud[preclusterId[p3]], center_t, r_t);
 		
 		// evaluate this circle
-		if ((r_t > 0.15)||(r_t < 0.02)) 
+		if ((r_t > 0.18)||(r_t < 0.02)) 
 		{
 			mistake+=0.01;
 			if (mistake > maxMistake) 
@@ -599,7 +807,7 @@ for (int trial = 0; trial < 20; trial++)
 			r = r_t;
 			consensus = consensus_t;
 		}
-		if (consensus > int(clusterSize*0.6)) {cout<<"**consensus: "<<consensus<<endl; break;}
+		//if (consensus > int(clusterSize*0.6)) {cout<<"**consensus: "<<consensus<<endl; break;}
 	}
 	
 	// fit the points to a cylinder, multiple times

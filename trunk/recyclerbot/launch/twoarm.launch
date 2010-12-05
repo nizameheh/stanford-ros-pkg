@@ -50,10 +50,10 @@
     pose_command_filter: 0.01
     cart_gains:
       trans:
-        p: 800.0
+        p: 1000.0
         d: 15.0
       rot:
-        p: 80.0
+        p: 90.0
         d: 1.2
     joint_feedforward:
       l_shoulder_pan_joint: 3.33
@@ -71,8 +71,8 @@
       l_forearm_roll_joint: 8.376
       l_wrist_flex_joint: 5.568
       l_wrist_roll_joint: 5.568
-    vel_saturation_trans: 1.0
-    vel_saturation_rot: 2.0
+    vel_saturation_trans: 1.4
+    vel_saturation_rot: 3
   </rosparam>
   
 
@@ -90,8 +90,9 @@
 
 
   <param name="success_threshold" value="0.02"/>
-  <param name="max_lead" value="0.08"/>
-  <param name="gripper_max_effort" value="18"/>
+  <param name="max_lead" value="0.06"/>
+  <param name="gripper_big_effort" value="40"/>
+  <param name="gripper_small_effort" value="17"/>
   <node name="grasp_server" pkg="recyclerbot" type="grasp_server" output="screen">
     <remap from="command_pose" to="/r_cart/command_pose"/>
     <remap from="current_pose" to="/r_cart/state/x"/>
@@ -115,7 +116,6 @@
       z: 0.00205700227215
       w: -0.625090084256
     gripper_open_position: 0.08
-    gripper_close_max_effort: 100.0
   </rosparam>
   
   <node name="object_detector" pkg="recyclerbot" type="object_detector_node" output="screen"/>
@@ -123,6 +123,7 @@
   <node name="recyclerbot" pkg="recyclerbot" type="recyclerbot_master" output="screen">
     <!--remap from="grasp_server" to="grasp_server"/-->
     <remap from="gripper_server" to="/r_gripper_controller/gripper_action"/>
+    <remap from="velocity_saturation" to="/r_cart/r_cart/velocity_saturation"/>
   </node>
   
   
