@@ -37,7 +37,7 @@
       r_wrist_flex_joint: 5.568
       r_wrist_roll_joint: 5.568
 
-    vel_saturation_trans: 1.0
+    vel_saturation_trans: 1.2
     vel_saturation_rot: 2.0
   </rosparam>
   
@@ -71,11 +71,43 @@
       l_forearm_roll_joint: 8.376
       l_wrist_flex_joint: 5.568
       l_wrist_roll_joint: 5.568
-    vel_saturation_trans: 1.4
-    vel_saturation_rot: 3
+    vel_saturation_trans: 1.2
+    vel_saturation_rot: 2.0
   </rosparam>
   
+  <rosparam>
+    type: PoseStamped
+    arm_init_pose:
+      position:
+        x: 0.17
+        y: -0.58
+        z: 1.2
+      orientation:
+        x: 0.0
+        y: 0.3
+        z: 0.0
+        w: 0.953939201
+    gripper_orientation:
+      x: -0.00403457514937
+      y: -0.780539478508
+      z: 0.00205700227215
+      w: -0.625090084256
+    success_threshold: 0.02
+    max_lead: 0.06
+    gripper_big_effort: 50
+    gripper_small_effort: 17
+    max_squeeze_effort: 50
+    min_squeeze_effort: 10
+    high_arm_move_precision: 0.004
+    low_arm_move_precision: 0.08
+    gripper_open_position: 0.08
+    gripper_close_position: 0.03
+    arm_move_timeout: 10.0
+    gripper_move_timeout: 5.0
+    using_arm: 1
+  </rosparam>
 
+	<!-- initialize arm controllers -->
   <node name="spawn_cart"
         pkg="pr2_controller_manager" type="spawner"
         args="l_cart r_cart" />
@@ -87,52 +119,36 @@
   <node name="l_posture"
         pkg="teleop_controllers" type="posture.py"
         args="l_cart elbowupl" />
-
-
-  <param name="success_threshold" value="0.02"/>
-  <param name="max_lead" value="0.06"/>
-  <param name="gripper_big_effort" value="40"/>
-  <param name="gripper_small_effort" value="17"/>
-  <node name="grasp_server" pkg="recyclerbot" type="grasp_server" output="screen">
+  
+  <!-- right arm server -->
+  <node name="r_grasp_server" pkg="recyclerbot" type="grasp_server" output="screen">
     <remap from="command_pose" to="/r_cart/command_pose"/>
     <remap from="current_pose" to="/r_cart/state/x"/>
   </node>
   
-  <rosparam>
-    type: PoseStamped
-    object_pose:
-      position:
-        x: 0.84452944994
-        y: 0.0548339411616
-        z: 1.0111913681
-      orientation:
-        x: 0
-        y: 0.3
-        z: 0
-        w: 0.953939201
-    gripper_orientation:
-      x: -0.00403457514937
-      y: -0.780539478508
-      z: 0.00205700227215
-      w: -0.625090084256
-    gripper_open_position: 0.08
-  </rosparam>
-  
-  <node name="object_detector" pkg="recyclerbot" type="object_detector_node" output="screen"/>
-  
-  <node name="recyclerbot" pkg="recyclerbot" type="recyclerbot_master" output="screen">
-    <!--remap from="grasp_server" to="grasp_server"/-->
-    <remap from="gripper_server" to="/r_gripper_controller/gripper_action"/>
-    <remap from="velocity_saturation" to="/r_cart/r_cart/velocity_saturation"/>
+  <!-- left arm server -->
+  <node name="l_grasp_server" pkg="recyclerbot" type="grasp_server" output="screen">
+    <remap from="command_pose" to="/l_cart/command_pose"/>
+    <remap from="current_pose" to="/l_cart/state/x"/>
   </node>
   
+  <!-- object detector -->
+  <node name="object_detector" pkg="recyclerbot" type="object_detector_node" output="screen"/>
   
-  <node name="r_gripper_controller"
-  	pkg="pr2_controller_manager" type="pr2_controller_manager"
+  <!-- recyclerbot master coordinator -->
+  <node name="recyclerbot" pkg="recyclerbot" type="recyclerbot_master" output="screen">
+    <remap from="r_gripper_server" to="/r_gripper_controller/gripper_action"/>
+    <remap from="r_velocity_saturation" to="/r_cart/r_cart/velocity_saturation"/>
+    <remap from="l_gripper_server" to="/l_gripper_controller/gripper_action"/>
+    <remap from="l_velocity_saturation" to="/l_cart/l_cart/velocity_saturation"/>
+  </node>
+   
+  <!-- right gripper controller -->
+  <node name="r_gripper_controller"	pkg="pr2_controller_manager" type="pr2_controller_manager"
 	args="start r_gripper_controller" />
 
-  <node name="l_gripper_controller"
-  	pkg="pr2_controller_manager" type="pr2_controller_manager"
+  <!-- left gripper controller -->
+  <node name="l_gripper_controller"	pkg="pr2_controller_manager" type="pr2_controller_manager"
 	args="start l_gripper_controller" />
   
     
