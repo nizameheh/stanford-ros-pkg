@@ -58,7 +58,7 @@ double& tabletop
 
   for (i = 0; i < pointNum; i++) 
   {
-  	if ((pointCloud[i].x > 3) || (pointCloud[i].y > 3) || (pointCloud[i].z > 3)) continue;
+  	if ((pointCloud[i].x > 3) || (pointCloud[i].y > 2) || (pointCloud[i].y < -2) || (pointCloud[i].z > 3) || (pointCloud[i].z < 0.6)) continue;
     if (pointCloud[i].x > maxX) maxX = pointCloud[i].x;
     if (pointCloud[i].x < minX) minX = pointCloud[i].x;
     if (pointCloud[i].y > maxY) maxY = pointCloud[i].y;
@@ -77,7 +77,7 @@ double& tabletop
   int gridMaxSizeZ = int(1 / RESOLUTION);
   if ((gridSizeX > gridMaxSizeX) || (gridSizeY > gridMaxSizeY) || (gridSizeZ > gridMaxSizeZ))
   {
-  	cout<<"grid too large, x: "<<gridSizeX<<"y: "<<gridSizeY<<"z: "<<gridSizeZ<<endl;
+  	cout<<"grid too large, x: "<<gridSizeX<<", y: "<<gridSizeY<<", z: "<<gridSizeZ<<endl;
 	  return;
   }
   
@@ -98,7 +98,7 @@ double& tabletop
 	int x,y,z;
   for (i = 0; i < pointNum; i++) 
   {
-  	if ((pointCloud[i].x > 3) || (pointCloud[i].y > 3) || (pointCloud[i].z > 3)) continue;
+  	if ((pointCloud[i].x > 3) || (pointCloud[i].y > 2) || (pointCloud[i].y < -2) || (pointCloud[i].z > 3) || (pointCloud[i].z < 0.6)) continue;
   	x = int((pointCloud[i].x - minX) / RESOLUTION);
   	y = int((pointCloud[i].y - minY) / RESOLUTION);
   	z = int((pointCloud[i].z - minZ) / RESOLUTION);
@@ -462,7 +462,7 @@ vector<visualization_msgs::Marker>& marker_msgs
 	
   filtered_msgs.push_back(pointsAboveTable);
     
-  if ((int)pointsAboveTable.points.size() < 3000) 
+  if ((int)pointsAboveTable.points.size() < 2000) 
   {
   	cout<<"Too few points: "<<pointsAboveTable.points.size()<<endl;
   	return;
@@ -609,8 +609,9 @@ vector<visualization_msgs::Marker>& marker_msgs
   geometry_msgs::Point32 p;
   
   vector<sensor_msgs::PointCloud> caps;
-  sensor_msgs::PointCloud cap;
-  for (i = 0; i < cylNum; i++) caps.push_back(cap);
+  caps.resize(cylNum);
+//  sensor_msgs::PointCloud cap;
+//  for (i = 0; i < cylNum; i++) caps.push_back(cap);
   
   for (i = 0; i < stereoSize; i++)
   {
@@ -618,12 +619,19 @@ vector<visualization_msgs::Marker>& marker_msgs
     for (j = 0; j < cylNum; j++)
     {
       cylinder_ = cylinders[j];
-      if ((p.z > cylinder_.center.z + cylinder_.height / 2) && (distance(cylinder_.center, p) < cylinder_.radius*0.6))
+      if ((p.z > cylinder_.center.z + cylinder_.height / 2) && (distance(cylinder_.center, p) < cylinder_.radius*0.7))
       {
 				caps[j].points.push_back(p);	
       }
     }
   }
+	if (cylNum>0) 
+	{
+		//cout<<"+++++++++++++++++++  cap number: "<<caps[0].points.size()<<endl;
+		if (caps[0].points.size() < 80) caps[0].points.clear();
+	}
+	
+  
   
   ////////////////////////////////////////////////////////////
   // -------------------FORTH STEP--------------------------
@@ -643,8 +651,9 @@ vector<visualization_msgs::Marker>& marker_msgs
     }
     
     double height_ = topZ - tabletop;
-    
-    if (height_ < 0.16) cylinders[i].classId = 0;
+    cout<<"cylinder height: "<<height_<<endl;
+//    if ((height_ < 0.17) || (caps[i].points.size() == 0)) cylinders[i].classId = 0;
+    if (height_ < 0.17) cylinders[i].classId = 0;
     else if (height_ < 0.22) cylinders[i].classId = 1;
     else cylinders[i].classId = 2;
   }

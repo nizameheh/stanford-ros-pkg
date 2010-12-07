@@ -65,9 +65,9 @@
       l_wrist_roll_joint: 0.0727
     joint_max_effort:
       l_shoulder_pan_joint: 11.88
-      l_shoulder_lift_joint: 11.64
+      l_shoulder_lift_joint: 13.64
       l_upper_arm_roll_joint: 6.143
-      l_elbow_flex_joint: 6.804
+      l_elbow_flex_joint: 8.804
       l_forearm_roll_joint: 8.376
       l_wrist_flex_joint: 5.568
       l_wrist_roll_joint: 5.568
@@ -102,7 +102,7 @@
     low_arm_move_precision: 0.08
     gripper_open_position: 0.08
     gripper_close_position: 0.03
-    arm_move_timeout: 10.0
+    arm_move_timeout: 5.0
     gripper_move_timeout: 5.0
     using_arm: 1
   </rosparam>
