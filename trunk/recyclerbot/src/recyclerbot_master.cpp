@@ -109,12 +109,12 @@ class RecyclerbotMaster
 		initPoseL.header.stamp = ros::Time::now();
 		
 		// load parameters
-	  n.getParam("gripper_big_effort", gripper_big_effort);
-	  n.getParam("gripper_small_effort", gripper_small_effort);
-	  n.getParam("max_squeeze_effort", max_squeeze_effort);
-	  n.getParam("min_squeeze_effort", min_squeeze_effort);
-	  n.getParam("high_arm_move_precision", armPrecisionH);
-	  n.getParam("low_arm_move_precision", armPrecisionL);
+	  n.param("gripper_big_effort", gripper_big_effort, 50.0);
+	  n.param("gripper_small_effort", gripper_small_effort, 17.0);
+	  n.param("max_squeeze_effort", max_squeeze_effort, 50.0);
+	  n.param("min_squeeze_effort", min_squeeze_effort, 10.0);
+	  n.param("high_arm_move_precision", armPrecisionH, 0.004);
+	  n.param("low_arm_move_precision", armPrecisionL, 0.08);
 	  n.param("gripper_open_position", gripperOpen, 0.085);
 	  n.param("gripper_close_position", gripperClose, 0.03);
 	  n.param("arm_move_timeout", armTimeout, 5.0);
@@ -133,7 +133,7 @@ class RecyclerbotMaster
   
   void use_low_speed(int whichArm)
   {
-  	set_arm_speed(0.6, whichArm);
+  	set_arm_speed(0.4, whichArm);
   }
   void use_medium_speed(int whichArm)
   {
@@ -149,6 +149,7 @@ class RecyclerbotMaster
   	std_msgs::Float64 maxVelocity;
   	maxVelocity.data = speed;
   	maxVelocity_pub->publish(maxVelocity);
+  	cout<<"setting arm speed to: "<<speed<<endl;
   }
   
   void object_pose_callback(const recyclerbot::CylinderArray& msg);
@@ -231,22 +232,22 @@ void RecyclerbotMaster::move_arm_to_bin(geometry_msgs::PoseStamped& pose, int wh
   }
   
   // 0 - can; 1 - glass bottle; 2 - plastic bottle
-  binR[0].position.x = 0.302;
-  binR[0].position.y = -0.295;
+  binR[0].position.x = 0.262;
+  binR[0].position.y = -0.145;
   binR[0].position.z = 1.018;
   binR[1].position.x = 0.201;
   binR[1].position.y = -0.575;
-  binR[1].position.z = 0.868;
+  binR[1].position.z = 0.648;
   binR[2].position.x = -0.086;
   binR[2].position.y = -0.551;
-  binR[2].position.z = 0.887;
+  binR[2].position.z = 0.647;
   
   binL[0].position.x = 0.254;
   binL[0].position.y = -0.174;
-  binL[0].position.z = 1.057;
+  binL[0].position.z = 1.0;
   binL[1].position.x = 0.617;
   binL[1].position.y = 0.586;
-  binL[1].position.z = 0.931;
+  binL[1].position.z = 0.851;
   binL[2].position.x = 0.242;
   binL[2].position.y = 0.599;
   binL[2].position.z = 0.936;
@@ -254,7 +255,8 @@ void RecyclerbotMaster::move_arm_to_bin(geometry_msgs::PoseStamped& pose, int wh
   geometry_msgs::Pose* bin = (whichArm == RIGHT_ARM) ? binR : binL;
   
 	path2bin[0] = bin[category];
-	path2bin[0].position.z = tabletop + liftDistance;;
+	path2bin[0].position.z = tabletop + liftDistance;
+	if ((category == 2) && (whichArm == RIGHT_ARM)) path2bin[0].position.x += 0.4;
 	path2bin[1] = bin[category];
 	path2bin[2] = initPose.pose;
 
@@ -325,6 +327,7 @@ void RecyclerbotMaster::object_pose_callback(const recyclerbot::CylinderArray& m
     targetPose.header.frame_id = msg.header.frame_id;
     targetPose.header.stamp = ros::Time::now();  
     targetPose.pose = msg.cylinders[0].pose;
+    targetPose.pose.orientation = initPoseR.pose.orientation;
     tabletop = msg.cylinders[0].pose.position.z - msg.cylinders[0].height / 2;
     category = msg.cylinders[0].category;
     
@@ -338,17 +341,20 @@ void RecyclerbotMaster::object_pose_callback(const recyclerbot::CylinderArray& m
     ros::Duration(0.5).sleep();
     
     // move to the item
-    targetPose.pose.position.z -= 0.12;
-    targetPose.pose.position.x += 0.025;
+    targetPose.pose.position.z -= 0.15;
+    targetPose.pose.position.x += 0.02;
+    if (whichArm == RIGHT_ARM) targetPose.pose.position.y += 0.03;
     move_arm(targetPose, armPrecisionH, whichArm);
     ros::Duration(0.5).sleep();
-    targetPose.pose.position.z = msg.cylinders[0].pose.position.z - 0.03;
+    targetPose.pose.position.z = msg.cylinders[0].pose.position.z - 0.02;
     targetPose.pose.position.x += (0.08 - 0.01);
+    if (whichArm == RIGHT_ARM) targetPose.pose.position.y -= 0.03;
     move_arm(targetPose, armPrecisionH, whichArm);
     ros::Duration(1).sleep();
     
     // squeeze
-    if (whichArm == LEFT_ARM)
+    
+    if ((whichArm == LEFT_ARM) && false)
     {
 		  //squeeze();
 		  double step_effort = (max_squeeze_effort - min_squeeze_effort) / 10;
@@ -364,7 +370,7 @@ void RecyclerbotMaster::object_pose_callback(const recyclerbot::CylinderArray& m
 		  
 		  open_gripper(whichArm);
 		  ros::Duration(1).sleep();
-		  targetPose.pose.position.x -= 0.15;
+		  targetPose.pose.position.x -= 0.35;
 		  targetPose.pose.position.z += 0.08;
 		  move_arm(targetPose, armPrecisionL, whichArm);
 		  ros::Duration(5).sleep();
@@ -398,6 +404,9 @@ void RecyclerbotMaster::object_pose_callback(const recyclerbot::CylinderArray& m
     	}
     	else category = 2;
     }
+    
+    if (category == 0) close_gripper(gripper_small_effort-5, whichArm);
+    if (category == 2) close_gripper(gripper_small_effort, whichArm);
     
     // be careful with glass bottles
     if (category == 1) use_medium_speed(whichArm);
