@@ -1,0 +1,6 @@
+<launch>    
+  <!-- start recording -->
+	<node pkg="topic_tools" type="drop" output="screen" name="drop_data1" args="/l_gripper_controller/state 4 5"/>
+	<!--node pkg="topic_tools" type="drop" output="screen" name="drop_data2" args="/pressure/l_gripper_motor"/-->
+	<node pkg="rosbag" type="record" output="screen" name="data_collection" args="/l_gripper_controller/state_drop /pressure/l_gripper_motor -O /home/jiahui/gripper_data_can"/>
+</launch>

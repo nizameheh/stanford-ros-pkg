@@ -237,20 +237,20 @@ void RecyclerbotMaster::move_arm_to_bin(geometry_msgs::PoseStamped& pose, int wh
   binR[0].position.z = 1.018;
   binR[1].position.x = 0.201;
   binR[1].position.y = -0.575;
-  binR[1].position.z = 0.648;
+  binR[1].position.z = 0.6;
   binR[2].position.x = -0.086;
   binR[2].position.y = -0.551;
   binR[2].position.z = 0.647;
   
   binL[0].position.x = 0.254;
   binL[0].position.y = -0.174;
-  binL[0].position.z = 1.0;
+  binL[0].position.z = 0.96;
   binL[1].position.x = 0.617;
   binL[1].position.y = 0.586;
-  binL[1].position.z = 0.851;
+  binL[1].position.z = 0.751;
   binL[2].position.x = 0.242;
   binL[2].position.y = 0.599;
-  binL[2].position.z = 0.936;
+  binL[2].position.z = 0.7;
   
   geometry_msgs::Pose* bin = (whichArm == RIGHT_ARM) ? binR : binL;
   
@@ -354,7 +354,7 @@ void RecyclerbotMaster::object_pose_callback(const recyclerbot::CylinderArray& m
     
     // squeeze
     
-    if ((whichArm == LEFT_ARM) && false)
+    if ((whichArm == LEFT_ARM) && true)
     {
 		  //squeeze();
 		  double step_effort = (max_squeeze_effort - min_squeeze_effort) / 10;
