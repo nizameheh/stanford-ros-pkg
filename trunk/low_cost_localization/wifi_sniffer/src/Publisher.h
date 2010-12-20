@@ -1,7 +1,3 @@
-/*
- * Project 3
- * Team Win: Arne Bech, Brian Chung, Robert Kanter, Pierre Kreitmann
- */
 
 #ifndef PUBLISHER_H
 #define PUBLISHER_H
@@ -21,8 +17,9 @@
 #include "ros/console.h"
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
-#include "map.h"
 #include "string.h"
+#include <cmath>
+#include <algorithm>
 
 
 /*
@@ -35,8 +32,8 @@ class Publisher
         static void publishPoint2(ros::Publisher marker_pub, Pose* pose, std::string frameID, std::string nameS, int id);
         static void publishPDF(ros::Publisher marker_pub, std::vector<Pose*> poses, std::string frameID);
         static void publishArrowsPDF(ros::Publisher posePublisher, std::vector<Pose*> poses, std::string frameID, float offset);
-        static void publishRobot(ros::Publisher marker_pub);
-        static void publishMap(const Map & map, const ros::Publisher & publisher, const char* nameSpace, std::string frameID);
+        //static void publishRobot(ros::Publisher marker_pub);
+
         static std_msgs::ColorRGBA colorScale(double x);
         
 

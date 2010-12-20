@@ -10,8 +10,7 @@
 #include "pose.h"
 #include "ConfigFileLoader.h"
 #include <vector>
-//#include "sensor_msgs/LaserScan.h"
-#include <laser_geometry/laser_geometry.h>
+#include <nav_msgs/OccupancyGrid.h>
 
 class PosePDF
 {
@@ -23,7 +22,10 @@ class PosePDF
 		void normalSample(float & x, float & y);
         bool isFreeInMap(float x, float y);
         void init(float x, float y, float theta, int numOfPoses, bool uniformDistribution, float stdDevX, float stdDevY, float stdDevTheta);
-	
+	    long binNumber(float x, float y, float theta);
+	    //void _xy2rowcol(long x, long y, long& row, long &col) const;
+	    //bool _withinBounds(long x, long y) const;
+	    //float operator()(long x, long y) const;
 	public:
 	    std::vector<Pose*> poseSet;
 		PosePDF();
@@ -36,6 +38,11 @@ class PosePDF
 		void resampling();
 		Pose* getSelectedPose();
 		void setSelectedPose(const Pose & p);
+		float countForResampling;
+		void kldSampling();
+		static boost::shared_ptr<nav_msgs::OccupancyGrid const> myMap;
+		
+		
 };
     
 #endif
