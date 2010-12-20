@@ -1,7 +1,3 @@
-/*
- * Project 3
- * Team Win: Arne Bech, Brian Chung, Robert Kanter, Pierre Kreitmann
- */
 
 
 #include "pose.h"
@@ -83,6 +79,10 @@ void Pose::move(float deltaX, float deltaY, float oldOdomTheta, float newOdomThe
    float deltaRot1 = angleMPiPi(atan2(deltaY, deltaX) - oldOdomTheta); // [-Pi,Pi]
    float deltaTrans = sqrt(deltaX * deltaX + deltaY * deltaY);
    float deltaRot2 = angleMPiPi(deltaTheta - deltaRot1); // [-Pi, Pi]
+   
+   //ADD IN ERROR!!!!!!!!!!!!!!!!!!! ALA PROJECT 4
+   
+   
    
    static float alpha1 = ConfigFileLoader::getInstance()->getValue("alpha1");
    static float alpha2 = ConfigFileLoader::getInstance()->getValue("alpha2");

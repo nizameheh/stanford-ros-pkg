@@ -41,5 +41,8 @@ target_link_libraries(wifi_sniffer_node wifi_sniffer)
 rosbuild_add_executable(mapper src/mapper.cpp)
 target_link_libraries(mapper wifi_sniffer)
 
-rosbuild_add_executable(runner src/runner.cpp src/posePDF.cpp src/pose.cpp src/ConfigFileLoader.cpp)
+rosbuild_add_executable(runner src/runner.cpp src/posePDF.cpp src/pose.cpp src/ConfigFileLoader.cpp src/Publisher.cpp)
 target_link_libraries(runner wifi_sniffer)
+
+rosbuild_add_executable(realRobotPosition src/realRobotPosition.cpp)
+target_link_libraries(realRobotPosition wifi_sniffer)

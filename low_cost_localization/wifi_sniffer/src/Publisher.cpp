@@ -1,10 +1,6 @@
-/*
- * Project 3
- * Team Win: Arne Bech, Brian Chung, Robert Kanter, Pierre Kreitmann
- */
+
 
 #include "Publisher.h"
-#include "util.h"
 
 /*
  * Publishes a single Pose to rviz
@@ -74,22 +70,37 @@ void Publisher::publishPDF(ros::Publisher marker_pub, std::vector<Pose*> poses, 
 	visualization_msgs::Marker mark;
 	mark.header.frame_id = frameID;
 	mark.header.stamp = ros::Time::now();
-	mark.ns = "Pose_distribution";
+	mark.ns = "poses";
 	mark.action = visualization_msgs::Marker::ADD;
 	mark.pose.orientation.w = 1.0;
+	mark.pose.orientation.x = 0.0;
+	mark.pose.orientation.y = 0.0;
+	mark.pose.orientation.z = 0.0;
 	mark.id = 0;
 	mark.type = visualization_msgs::Marker::POINTS;
-	mark.color.r = 1.0;
-	mark.color.b = 0.5;
+	//mark.color.r = 1.0;
+	//mark.color.b = 0.5;
 	mark.color.a = 1.0;
 	mark.scale.x = 0.02;
 	mark.scale.y = 0.02;
+	
+	float maxProb = 0.0;
+	for(unsigned int a = 0; a < poses.size(); a++) {
+		if(poses.at(a)->getProbability() > maxProb) maxProb = poses.at(a)->getProbability();
+	}
+	
 	for(unsigned int i = 0; i < poses.size(); i = i + 1)
 	{
 		geometry_msgs::Point point;
+		float colorNumber = poses.at(i)->getProbability() / maxProb;
+		colorNumber = std::max(colorNumber, 0.0f);
+		colorNumber = std::min(colorNumber, 1.0f);
+		std_msgs::ColorRGBA myColor = colorScale(colorNumber);
+		//ROS_WARN("r: %f, g: %f, b: %f, a: %f", myColor.r, myColor.g, myColor.b, myColor.a);
+		mark.colors.push_back(myColor);
 	    point.x = poses.at(i)->getX();
 	    point.y = poses.at(i)->getY();
-	    point.z = 0.0;
+	    point.z = 0.1;
 	    
 	    //ROS_INFO("x: %f, y: %f", point.x, point.y);
 	    
@@ -123,127 +134,20 @@ void Publisher::publishArrowsPDF(ros::Publisher posePublisher, std::vector<Pose*
 }
 
 /*
- * Publishes a box approximating the robot's location to rviz
- */
-void Publisher::publishRobot(ros::Publisher marker_pub)
-{
-    visualization_msgs::Marker window;
-    
-    window.header.frame_id = *Util::baseFootprintFrameId;
-	window.header.stamp = ros::Time::now();
-	window.ns = "Robot";
-	window.action = visualization_msgs::Marker::ADD;
-	window.pose.orientation.w = 1.0;
-	window.id = 1;
-	window.type = visualization_msgs::Marker::LINE_STRIP;
-	window.color.a = 1.0;
-	window.scale.x = 0.05;
-	window.color.b = 1.0;
-	window.scale.y = 0.01;
-
-    
-     geometry_msgs::Point point;
-     point.x = 0.2;
-     point.y = 0.2;
-     point.z = 0.0;
-     window.points.push_back(point);
-     
-     point.x = 0.2;
-     point.y = -0.2;
-     point.z = 0.0;
-     window.points.push_back(point);
-     
-     point.x = -0.2;
-     point.y = -0.2;
-     point.z = 0.0;
-     window.points.push_back(point);
-     
-     point.x = -0.2;
-     point.y = 0.2;
-     point.z = 0.0;
-     window.points.push_back(point);
-     
-     point.x = 0.2;
-     point.y = 0.2;
-     point.z = 0.0;
-     window.points.push_back(point);
-    
-     marker_pub.publish(window);
-    
-}
-
-/*
  * Helper used by publishMap to determine the colors
  */
 std_msgs::ColorRGBA Publisher::colorScale(double x) 
 {
   std_msgs::ColorRGBA color;
   color.a = .5;
-  x = 2*x/3;
-  color.r = max(0.0, min(1.0, max(2.0 - 6.0*x, 6.0*x - 4.0)));
-  color.g = max(0.0, min(1.0, min(4.0 - 6.0*x, 6.0*x)));
-  color.b = max(0.0, min(1.0, min(6.0 - 6.0*x, 6.0*x - 2.0)));
+  //x = 2*x/3;
+  color.r = x;
+  color.g = 1.0 - x;
+  color.b = 1.0 - x;
+  
+  //color.r = std::max(0.0, std::min(1.0, std::max(2.0 - 6.0*x, 6.0*x - 4.0)));
+  //color.g = 0.0; //std::max(0.0, std::min(1.0, std::min(4.0 - 6.0*x, 6.0*x)));
+  //color.b = 1.0 - color.r; //std::max(0.0, std::min(1.0, std::min(6.0 - 6.0*x, 6.0*x - 2.0)));
 
   return color;
-}
-
-void Publisher::publishMap(const Map & map, const ros::Publisher & publisher, const char* nameSpace, std::string frameID="/map")
-{
-    static double lastPublishedTime = -1;
-    double currentTime =ros::Time::now().toSec();
-    
-    if ((currentTime - lastPublishedTime) < 10)  {
-        return;
-    }
-   
-   lastPublishedTime = currentTime;
-  /* variables starting with m are in meters, those starting with px are in
-   * pixels
-   */
-  float mMaxValue = 20.0; // all values above (ie., obstacles, that are INF) are not published
-    float mMinValue = 0.0;
-    
-    if (frameID == "/odom") {
-        mMaxValue = 1.1;
-        mMinValue = 0.8;
-    }
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = frameID;
-  marker.header.stamp = ros::Time::now();
-  marker.lifetime = ros::Duration::Duration();
-  marker.ns = nameSpace;
-  marker.id = 1;
-  marker.type = visualization_msgs::Marker::POINTS;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.scale.x = map.resolution();
-  marker.scale.y = marker.scale.x;
-
-  marker.pose.orientation.x = 0;
-  marker.pose.orientation.y = 0;
-  marker.pose.orientation.z = 0;
-  marker.pose.orientation.w = 1;
-  marker.color.a= 1.0;
-
-  int cols = map.cols();
-  int rows = map.rows();
-
-  for (int pxY = 0; pxY < rows; pxY++) {
-    for (int pxX = 0; pxX < cols; pxX++) {
-      double mVal = map(pxX, pxY);
-
-      if (mMinValue<= mVal && mVal <= mMaxValue ) {
-        double tempVal = (mVal-mMinValue)/(mMaxValue-mMinValue);
-        std_msgs::ColorRGBA myColor = colorScale(tempVal);
-        marker.colors.push_back(myColor);
-
-        geometry_msgs::Point myPoint;
-        myPoint.x = (pxX+ .5) * map.resolution();
-        myPoint.y = (pxY+ .5) * map.resolution();
-        // the .5 is there because we give the center of the square
-        myPoint.z = 0;
-        marker.points.push_back(myPoint);
-      }
-    }
-  }
-  publisher.publish(marker);
 }

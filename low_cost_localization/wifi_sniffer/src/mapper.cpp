@@ -219,15 +219,9 @@ int main(int argc, char **argv)
 	
     ros::NodeHandle node;
     
-    //Transform broadcaster and listener
-    tf::TransformBroadcaster transformBroadcaster;
+    //Transform listener
     tf::TransformListener _tfListener;
     tfListener = &_tfListener;    
-    
-    //Broadcast transform
-	transformer.setOrigin( tf::Vector3(0.0, 0.0, 0.0) );
-	transformer.setRotation( tf::Quaternion(0, 0, 0) );
-	transformBroadcaster.sendTransform(tf::StampedTransform(transformer, ros::Time::now(), "/map", "/odom"));    
     
     //Subscribe to topics and set up callbacks
 	ros::Subscriber wifiSubscriber = node.subscribe("/wifi_scan_usb", 2, wifiCallback);
@@ -249,6 +243,26 @@ int main(int argc, char **argv)
 	mark.scale.x = 0.2;
 	mark.scale.y = 0.2;  
 	
+	//Load the file
+	try {
+		scanSetI = openScanSet(fileName);
+	}
+	catch(std::string what) {
+		ROS_INFO("File is new");
+	}
+	
+	//Publish all the points you have saved so far
+	for(int a = 0; a < scanSetI->getSize(); a++) {
+		ROS_INFO("X: %f Y: %f", scanSetI->at(a)->getX(), scanSetI->at(a)->getY());
+		
+		geometry_msgs::Point point;
+		point.x = scanSetI->at(a)->getX();
+		point.y = scanSetI->at(a)->getY();
+		point.z = 0.0;
+		mark.points.push_back(point);
+	}
+	
+	point_pub.publish(mark);
 	
     //Set running rate to 30hz:
     ros::Rate rate(30.0);
@@ -262,7 +276,7 @@ int main(int argc, char **argv)
   	    if(counter == 600) {
 	
 			
-			ROS_INFO("Counter hit 300");
+			ROS_INFO("Counter hit 600. File saved.i.e. Should have all data before now");
 			
 			saveScanSet(scanSetI, fileName);
 

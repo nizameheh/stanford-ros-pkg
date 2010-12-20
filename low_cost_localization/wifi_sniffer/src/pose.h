@@ -1,7 +1,3 @@
-/*
- * Project 3
- * Team Win: Arne Bech, Brian Chung, Robert Kanter, Pierre Kreitmann
- */
 
 #ifndef POSE_H
 #define POSE_H
@@ -37,6 +33,7 @@ class Pose
 		float getTheta();
 		float getProbability(); 
 		void setProbability(float prob);
+		
 };
 
 #endif
