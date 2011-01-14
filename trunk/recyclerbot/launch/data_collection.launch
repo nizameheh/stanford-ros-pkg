@@ -1,4 +1,4 @@
 <launch>    
   <!-- start recording -->
-	<node pkg="rosbag" type="record" output="screen" name="data_collection" args="/wide_stereo/points /narrow_stereo/points /narrow_stereo_textured/points /full_cloud_filtered /wide_stereo/left/image_rect_color /wide_stereo/right/image_rect_color /narrow_stereo/left/image_rect /narrow_stereo/right/image_rect /tf -O /home/jiahui/glass_bottle_data"/>
+	<node pkg="rosbag" type="record" output="screen" name="data_collection" args="/wide_stereo/points /narrow_stereo/points /narrow_stereo_textured/points /wide_stereo/left/image_rect_color /wide_stereo/right/image_rect_color /narrow_stereo/left/image_rect /narrow_stereo/right/image_rect /tf -O /home/jiahui/piled_data"/>
 </launch>
