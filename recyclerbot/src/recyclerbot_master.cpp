@@ -354,7 +354,7 @@ void RecyclerbotMaster::object_pose_callback(const recyclerbot::CylinderArray& m
     
     // squeeze
     
-    if ((whichArm == LEFT_ARM) && true)
+    if ((whichArm == LEFT_ARM) && false)
     {
 		  //squeeze();
 		  double step_effort = (max_squeeze_effort - min_squeeze_effort) / 10;
