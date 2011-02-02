@@ -1,0 +1,15 @@
+<package>
+  <description brief="ancient_powercube">
+    We have this ancient blue Amtec powercube sitting around our lab that 
+    still works fine. I doubt there are many other working specimens of this
+    vintage, so I'm putting it in its own package, since I believe the RS-232
+    protocol is complete different from their newer products.
+  </description>
+  <author>Morgan Quigley</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="serial_port"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lancient_powercube"/>
+  </export>
+</package>
