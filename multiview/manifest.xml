@@ -1,0 +1,22 @@
+<package>
+  <description brief="multiview">
+
+     Object recognition from multiple views
+
+  </description>
+  <author>Jiahui Shi</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/multiview</url>
+  <depend package="opencv2"/>
+  <depend package="roscpp"/>
+  <depend package="prosilica_camera"/>
+  <depend package="tf"/>
+  <depend package="ancient_powercube">
+  <depend package="cv_bridge"/>
+  <depend package="sensor_msgs"/>
+  <depend package="std_msgs"/>
+
+</package>
+
+
