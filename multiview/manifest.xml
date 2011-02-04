@@ -11,8 +11,9 @@
   <depend package="opencv2"/>
   <depend package="roscpp"/>
   <depend package="prosilica_camera"/>
+  <depend package="polled_camera"/>  
   <depend package="tf"/>
-  <depend package="ancient_powercube">
+  <depend package="ancient_powercube"/>
   <depend package="cv_bridge"/>
   <depend package="sensor_msgs"/>
   <depend package="std_msgs"/>
