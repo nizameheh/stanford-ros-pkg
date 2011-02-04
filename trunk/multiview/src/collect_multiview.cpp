@@ -1,22 +1,32 @@
 #include <ros/ros.h>
 #include <iostream>
 #include "ancient_powercube/ancient_powercube.h"
+#include "ancient_powercube/GotoPanTilt.h"
+//#include "prosilica_camera/prosilica.h"
+#include "polled_camera/GetPolledImage.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 //#include "image_transport/image_transport.h"
 #include "cv_bridge/CvBridge.h"
 #include <string>
+#include <stdlib.h>
+#include <stdio.h>
+
+using namespace std;
 
 bool image_saved = false;
-string filename;
+char filename[100];
 sensor_msgs::CvBridge bridge;
 
 void cam_cb(const sensor_msgs::ImageConstPtr &msg)
 {
+	cout<<"in callback!"<<endl;
+  ROS_INFO("Saving image to %s", filename);
   IplImage *cv_image = bridge.imgMsgToCv(msg, "rgb8");
-  imwrite(filename, cv_image);
+  cvSaveImage(filename, cv_image);
   image_saved = true;
 }
+
 
 int main(int argc, char **argv)
 {
@@ -34,28 +44,37 @@ int main(int argc, char **argv)
 	ancient_powercube::GotoPanTilt srv_call;
 //	ros::Subscriber powercube_sub = n.subscribe<ancient_powercube::Status>("pantilt_state", 1, pantilt_cb);
 	
-	ros::ServiceClient cam_client = n.serviceClient<prosilica_camera::GetPolledImage>("/prosilica/request");
-	prosilica_camera::GetPolledImage cam_srv_call;
-	cam_srv_call.request.response_namespace = "prosilica";
-	ros:Subscribe cam_sub = n.subscribe<sensor_msgs::Image>("prosilica/image_raw", 1, cam_cb);
-		
-  string prefix; // prefix of filenames of files
-  while (cin>>prefix)
+	ros::ServiceClient cam_client = n.serviceClient<polled_camera::GetPolledImage>("/prosilica/request_image");
+	polled_camera::GetPolledImage cam_srv_call;
+	cam_srv_call.request.response_namespace = "/prosilica";
+	cam_srv_call.request.roi.x_offset = 0;
+	cam_srv_call.request.roi.y_offset = 0;
+	cam_srv_call.request.roi.height = 200;
+	cam_srv_call.request.roi.width = 200;
+	ros::Subscriber cam_sub = n.subscribe<sensor_msgs::Image>("/prosilica/image_raw", 1, cam_cb);
+	
+	// prefix of filenames of files
+  string prefix;
+  int error = 0;
+  cout<<"Input filename prefix: ";
+  while (error < 5 && cin>>prefix)
   {
-  	for (int i = 0; i < 360; i += angle)
+  	for (int i = 0; i < 30 && error < 5; i += angle)
   	{
   		ROS_INFO("Current angle: %d", i);
   		
-  		filename = prefix;
-  		filename.append(itoa(i));
+  		//filename = prefix;
+  		//filename.append(itoa(i));
+  		sprintf(filename, "/home/jiahui/pr2images/%s%d.jpg", prefix.c_str(), i);
   		
-			srv_call.request.pan = i;
+			srv_call.request.pan = (float)i/10;
 			if (client.call(srv_call))
 				ROS_INFO("Succeed: Move pan angle");
 			else
 			{
 				ROS_ERROR("FAIL: Move pan angle");
 				i -= angle;
+				error++;
 				continue;
 			}
 			
@@ -65,21 +84,23 @@ int main(int argc, char **argv)
 			{
 				ROS_ERROR("FAIL: Take image");
 				i -= angle;
+				error++;
 				continue;
 			}
 			
 			ros::Rate rate(1);
 			int count = 0;
-			while (!image_saved && count++ < 10) rate.sleep();
+			while (!image_saved && count++ < 5) rate.sleep();
 			
-			if (count < 10) ROS_INFO("Succeed: Save image");
+			if (count < 5) ROS_INFO("Succeed: Save image");
 			else
 			{
 				ROS_ERROR("FAIL: Save image");
 				i -= angle;
+				error++;
 				continue;
 			}
-			
+			error = 0;
 			image_saved = false;
 		}
   }

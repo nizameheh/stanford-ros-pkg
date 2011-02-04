@@ -1,20 +1,28 @@
 <?xml version="1.0" ?>
 <launch>
-	<group ns="prosilica">
-    <include file="cam_settings.xml"/>
+	<!--group ns="prosilica">
+    <rosparam file="$(find prosilica_camera)/cam_settings.yaml" command = "load"/>
     <param name="trigger_mode" type="str" value="streaming"/>
     <param name="ip_address" type="str" value="10.68.0.20"/>
   </group>
-  <node name="prosilica" pkg="prosilica_camera" type="prosilica_node" respawn="\false" output="screen"/>
+  <node name="prosilica"
+  			pkg = "prosilica_camera" 
+  			type="prosilica_node" 
+  			respawn="false"
+  			output="screen"/>
+  			
+  <include file = "$(find prosilica_camera)/prosilica.launch" /-->			
 
 	<node name = "ancient_powercube"
-				package = "ancient_powercube"
-				type = "node"/>
+				pkg = "ancient_powercube"
+				type = "node"
+  			output="screen"/>
 				
 	<node name = "collect_multiview"
-				package = "multiview"
+				pkg = "multiview"
 				type = "collect_multiview"
-				args = "5"/>
+				args = "5"
+  			output="screen"/>
 				
 
 </launch>
