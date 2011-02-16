@@ -9,20 +9,15 @@
   			pkg = "prosilica_camera" 
   			type="prosilica_node" 
   			respawn="false"
-  			output="screen"/>
+  			output="screen"/-->
   			
-  <include file = "$(find prosilica_camera)/prosilica.launch" /-->			
+  <!--include file = "$(find prosilica_camera)/prosilica.launch" /-->			
 
 	<node name = "ancient_powercube"
 				pkg = "ancient_powercube"
 				type = "node"
   			output="screen"/>
 				
-	<node name = "collect_multiview"
-				pkg = "multiview"
-				type = "collect_multiview"
-				args = "5"
-  			output="screen"/>
-				
+  <include file = "$(find multiview)/multivew.launch" />		
 
 </launch>
