@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<launch>
+  <rosparam>
+    image_height: 480*2
+    image_width: 640*2
+    angle: 5
+    max_angle: 360
+  </rosparam>
+				
+	<node name = "collect_multiview"
+				pkg = "multiview"
+				type = "collect_multiview"
+  			output="screen"/>
+				
+
+</launch>
