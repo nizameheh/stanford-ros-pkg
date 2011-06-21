@@ -12,7 +12,6 @@
   <depend package="rospy"/>
   <depend package="tf"/>
   <depend package="geometry_msgs"/>
-  <rosdep name="python-hid"/>
-  <rosdep name="libhid"/>
+  <rosdep name="libusb"/>
 </package>
 
