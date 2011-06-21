@@ -14,5 +14,5 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rosbuild_init(spacepoint)
 
 rosbuild_add_executable(spacepoint_node spacepoint_node.cpp)
-target_link_libraries(spacepoint_node usb hid)
+target_link_libraries(spacepoint_node usb-1.0)
 
