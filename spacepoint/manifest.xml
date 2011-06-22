@@ -12,5 +12,6 @@
   <depend package="rospy"/>
   <depend package="tf"/>
   <depend package="geometry_msgs"/>
+  <rosdep name="libudev"/>
 </package>
 

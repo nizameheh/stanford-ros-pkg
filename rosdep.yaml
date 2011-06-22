@@ -2,5 +2,5 @@ wireless-tools:
   ubuntu: libiw-dev
 python-hid:
   ubuntu: python-hid
-libhid:
-  ubuntu: libhid-dev
+libudev:
+  ubuntu: libudev-dev
