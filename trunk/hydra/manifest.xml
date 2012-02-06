@@ -1,0 +1,17 @@
+<package>
+  <description brief="hydra">
+     hydra
+  </description>
+  <author>Morgan Quigley</author>
+  <depend package="roscpp"/>
+  <depend package="yaml_cpp"/>
+  <depend package="rospy"/>
+  <depend package="bullet"/>
+  <depend package="geometry_msgs"/>
+  <depend package="tf"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lhydra"/>
+  </export>
+</package>
+
+
