@@ -1,0 +1,5 @@
+(new shell) roslaunch gazebo_worlds empty_world.launch
+(new shell) roslaunch pr2_gazebo pr2.launch
+(new shell) roslaunch hydra_pr2_teleop cart.launch
+(new shell) roslaunch hydra driver
+(new shell) roslaunch hydra_pr2_teleop teleop_pr2_hydra

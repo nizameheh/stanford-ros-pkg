@@ -1,0 +1,13 @@
+<package>
+  <description brief="hydra_pr2_teleop">
+     hydra_pr2_teleop
+  </description>
+  <author></author>
+  <depend package="geometry_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="hydra"/>
+  <depend package="tf"/>
+  <depend package="pr2_controllers_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="actionlib"/>
+</package>
