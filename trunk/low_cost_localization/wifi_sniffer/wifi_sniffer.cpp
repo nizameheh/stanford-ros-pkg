@@ -143,10 +143,9 @@ bool WifiSniffer::scan(std::vector<WifiSniff> &sniffs)
         {
           case SIOCGIWAP:
           {
-            //printf("\naddress %s  ",
-            //       iw_saether_ntop(&iwe.u.ap_addr, (char *)scan_buffer));
             char bufp[1024]; // just don't run over the end plz
-            iw_ether_ntop((const struct ether_addr *)&iwe.u.ap_addr, bufp);
+            iw_ether_ntop((const struct ether_addr *)&iwe.u.ap_addr.sa_data, 
+                          bufp);
             sniff.mac = string(bufp);
             break;
           }
